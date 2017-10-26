@@ -31,7 +31,7 @@ namespace Evaluator
             IntPtr ptr = bmpData.Scan0;
 
             // Declare an array to hold the bytes of the bitmap.
-            int pixels = bmp.Width * bmp.Height;
+            int pixels = Math.Abs(bmpData.Stride) * bmp.Height;
             byte[] greyValues = new byte[pixels];
             int[] histogram = new int[Consts.MaxLBP * Consts.Bins]; 
 
