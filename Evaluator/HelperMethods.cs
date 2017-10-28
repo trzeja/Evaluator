@@ -10,19 +10,13 @@ namespace Evaluator
     {
         static public int GetBinFor(double c)
         {
-            c += Consts.UpperCRange; // move to <0,UpperCRange*2> range from <-UpperCRange,UpperCRange> 
-            var t = c / Consts.BinSize;
-            int bin = (int)Math.Ceiling(c / Consts.BinSize);
-
-            if (bin >= Consts.Bins)
-            {
-                bin--;
-            }
-
+            c += Consts.MaxC; // move to <0,MaxC*2> range from <-MaxC,MaxC>             
+            int bin = (int)Math.Floor(c / Consts.BinSize);
+            
             return bin;
         }
 
-        public static Tuple<byte,double> CountLBPAndC(byte[] greyValues, int width, int pixelIdx)
+        public static LBPC CountLBPC(byte[] greyValues, int width, int pixelIdx)
         {
             //TODO na razie nie baw sie w refactor ilno brutal
             byte LBP = 0;
@@ -47,7 +41,7 @@ namespace Evaluator
 
             #endregion
 
-            greyValues[pixelIdx] = 0;
+            
             
             if (greyValues[pixelIdx] <= greyValues[northWestNeighborIdx])
             {
@@ -160,7 +154,7 @@ namespace Evaluator
                 C = (biggerOrEqualNeighborsSum / biggerOrEqualNeighborsCount) - (smallerNeighborsSum / smallerNeighborsCount);
             }
 
-            return new Tuple<byte, double> (LBP, C);
+            return new LBPC { LBP = LBP, C = C };
         }
     }
 }
