@@ -15,7 +15,7 @@ namespace Evaluator
 
             //var bin = GetBinFor(27.895);
             //var bin = GetBinFor(31.875);
-            Evaluator.LockUnlockBits();
+            Evaluator.ProcessImages();
 
             
 
