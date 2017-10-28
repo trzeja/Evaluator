@@ -43,15 +43,14 @@ namespace Evaluator
 
             //CountLBP(greyValues, bmp.Width, 20);
 
+            Rectangle mainBlock = new Rectangle(0, 0, stride, bmp.Height);
             
-            Block mainBlock = new Block { x = 0, y = 0, height = bmp.Height, width = stride }; //bo bez ramki jednopikselowej
-
-            int blocksInRow = mainBlock.width / Consts.minimumBlockSize;
+            int blocksInRow = mainBlock.Width / Consts.minimumBlockSize;
             int blocksTotal = blocksInRow * blocksInRow;
 
-            for (int i = mainBlock.y + 1; i < mainBlock.height - 1; i++)
+            for (int i = mainBlock.Y + 1; i < mainBlock.Height - 1; i++)
             {
-                for (int j = mainBlock.x + 1; j < mainBlock.width - 1 - extraStrideBytesPerLine; j++)
+                for (int j = mainBlock.X + 1; j < mainBlock.Width - 1 - extraStrideBytesPerLine; j++)
                 {
                     //var LBPC = HelperMethods.CountLBPC(greyValues, mainBlock.width, mainBlock.width * i + j);
                     //byte LBP = LBPC.LBP;
@@ -59,7 +58,7 @@ namespace Evaluator
                     //int b = HelperMethods.GetBinFor(C);
                   
                    // histogram[(LBP)*Consts.Bins + b]++;
-                    greyValues[mainBlock.width * i + j] = 255;
+                    greyValues[mainBlock.Width * i + j] = 255;
 
                     //tu problem bo nie mam obrazka 514x514 (wpx na ramke)
                     //if ((i%Consts.minimumBlockSize == 0) && (j % Consts.minimumBlockSize == 0))
