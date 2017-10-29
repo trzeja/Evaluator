@@ -15,17 +15,26 @@ namespace Evaluator
         static public void ProcessImages()
         {
             var h1 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
-            //var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
+
+            var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
+            //var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514LR.gif");
 
             SaveResults(h1);
 
-            //var MSE = CalculateMSE(h1, h2);
+            var MSE = CalculateMSE(h1, h2);
         }
 
        
-        private static double CalculateMSE(double[] h1, double[] h2)
+        private static double CalculateMSE(double[] histogram1, double[] histogram2)
         {
-            throw new NotImplementedException(); //todo
+            double sum = 0;
+
+            for (int i = 0; i < histogram1.Length; i++)
+            {
+                sum += Math.Pow((histogram1[i] - histogram2[i]),2);
+            }
+
+            return sum / histogram1.Length;
         }
 
         static private double[] GetNormalizedHistogramfromFile(string path)
