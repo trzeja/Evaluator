@@ -14,14 +14,14 @@ namespace Evaluator
 
         static public void ProcessImages()
         {
-            var h1 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
+            //var h1 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
 
-            var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
-            //var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514LR.gif");
+            //var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
+            var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514LR.gif");
 
-            SaveResults(h1);
+           // SaveResults(h1);
 
-            var MSE = CalculateMSE(h1, h2);
+            //var MSE = CalculateMSE(h1, h2);
         }
 
        
@@ -39,9 +39,7 @@ namespace Evaluator
 
         static private double[] GetNormalizedHistogramfromFile(string path)
         {
-
             Bitmap bmp = new Bitmap(path);
-            //Bitmap bmp = new Bitmap(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray2.gif");
                        
             Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
             BitmapData bmpData = bmp.LockBits(rect, ImageLockMode.ReadWrite,
@@ -55,19 +53,66 @@ namespace Evaluator
             int bytes = stride * bmp.Height;
           
             byte[] greyValues = new byte[bytes];
+            byte[] ID = new byte[bytes];
 
             double[] histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins]; 
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, greyValues, 0, bytes);
 
             bmp.UnlockBits(bmpData);
-                
 
-            Rectangle mainBlock = new Rectangle(0, 0, stride, bmp.Height);
+
+
+
+            int blocksInRow = (int)Math.Ceiling((double)bmp.Width / (double)Consts.minimumBlockSize);
+            int blocksInCol = (int)Math.Ceiling((double)bmp.Height / (double)Consts.minimumBlockSize);
             
-            int blocksInRow = mainBlock.Width / Consts.minimumBlockSize;
             int blocksTotal = blocksInRow * blocksInRow;
 
+            //Rectangle[] blocks = new Rectangle[blocksTotal]; //tablioca podobszarow
+            var blocks = new List<Rectangle>(); // do debugowania
+            var regions = new List<SubRegion>();
+
+            int[] IDs = new int[bmp.Width * bmp.Height];
+
+
+            Rectangle mainBlock = new Rectangle(0, 0, stride, bmp.Height);
+
+            int id = 0;
+
+            for (int i = mainBlock.Y + 1; i < mainBlock.Height; i+= Consts.minimumBlockSize)
+            {
+                for (int j = 0; j  < mainBlock.Width + 1; j += Consts.minimumBlockSize)
+                {
+                    int newBlockWidth = Consts.minimumBlockSize;
+                    int newBlockHeight = Consts.minimumBlockSize;
+
+                    if (j + Consts.minimumBlockSize > mainBlock.Width)
+                    {
+                        newBlockWidth = mainBlock.Width - j;
+                    }
+
+                    if (i + Consts.minimumBlockSize > mainBlock.Height)
+                    {
+                        newBlockHeight = mainBlock.Height - i;
+                    }
+
+                    var newBlock = new Rectangle(i, j, newBlockWidth, newBlockHeight);
+                    blocks.Add(newBlock);
+                    var newSubRegion = new SubRegion();
+                    newSubRegion.Blocks.Add(newBlock);
+                    newSubRegion.ID = id++;
+
+                    regions.Add(newSubRegion);
+                }
+            }
+
+
+
+
+
+            
+                        
             for (int i = mainBlock.Y + 1; i < mainBlock.Height - 1; i++)
             {
                 for (int j = mainBlock.X + 1; j < mainBlock.Width - 1 - extraStrideBytesPerLine; j++)
