@@ -15,7 +15,8 @@ namespace Evaluator
 
             //var bin = GetBinFor(27.895);
             //var bin = GetBinFor(31.875);
-            Evaluator.ProcessImages();
+            var eva = new Evaluator();
+            eva.ProcessImages();
 
             
 

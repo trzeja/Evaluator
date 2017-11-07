@@ -9,80 +9,81 @@ using System.Drawing.Imaging;
 namespace Evaluator
 {
 
-    public static class Evaluator
+    public class Evaluator
     {
+        private int _bytes;
+        private byte[] _greyValues;
 
-        static public void ProcessImages()
+
+        private byte[] _ID;
+        private Bitmap _bmp;
+        double[] _histogram;
+
+        private List<Rectangle> _blocks;
+        private List<SubRegion> _subRegions;
+
+
+        public void ProcessImages()
         {
-            //var h1 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray128.gif";
 
-            //var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514.gif");
-            var h2 = GetNormalizedHistogramfromFile(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray514LR.gif");
+            ReadFile(path);
+
+            var h1 = GetNormalizedHistogramfromFile();
+
+            ReadFile(path);
+
+            var h2 = GetNormalizedHistogramfromFile();
 
            // SaveResults(h1);
 
-            //var MSE = CalculateMSE(h1, h2);
+            var MSE = CalculateMSE(h1, h2);
         }
 
-       
-        private static double CalculateMSE(double[] histogram1, double[] histogram2)
+        private void ReadFile(string path)
         {
-            double sum = 0;
+            _bmp = new Bitmap(path);
 
-            for (int i = 0; i < histogram1.Length; i++)
-            {
-                sum += Math.Pow((histogram1[i] - histogram2[i]),2);
-            }
+            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
+            BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
+                _bmp.PixelFormat);
 
-            return sum / histogram1.Length;
-        }
-
-        static private double[] GetNormalizedHistogramfromFile(string path)
-        {
-            Bitmap bmp = new Bitmap(path);
-                       
-            Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-            BitmapData bmpData = bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                bmp.PixelFormat);
-     
             IntPtr ptr = bmpData.Scan0;
+                        
+            _bytes = _bmp.Width * _bmp.Height;
+            
 
-            int stride = Math.Abs(bmpData.Stride);
-            int extraStrideBytesPerLine = stride - bmp.Width;
-        
-            int bytes = stride * bmp.Height;
-          
-            byte[] greyValues = new byte[bytes];
-            byte[] ID = new byte[bytes];
+            _greyValues = new byte[_bytes];
+            _ID = new byte[_bytes];
 
-            double[] histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins]; 
+            _histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
-            System.Runtime.InteropServices.Marshal.Copy(ptr, greyValues, 0, bytes);
+            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
-            bmp.UnlockBits(bmpData);
+            _bmp.UnlockBits(bmpData);
+        }
+             
 
-
-
-
-            int blocksInRow = (int)Math.Ceiling((double)bmp.Width / (double)Consts.minimumBlockSize);
-            int blocksInCol = (int)Math.Ceiling((double)bmp.Height / (double)Consts.minimumBlockSize);
+        private double[] GetNormalizedHistogramfromFile()
+        {
+           
+            int blocksInRow = (int)Math.Ceiling((double)_bmp.Width / (double)Consts.minimumBlockSize);
+            int blocksInCol = (int)Math.Ceiling((double)_bmp.Height / (double)Consts.minimumBlockSize);
             
             int blocksTotal = blocksInRow * blocksInRow;
 
             //Rectangle[] blocks = new Rectangle[blocksTotal]; //tablioca podobszarow
-            var blocks = new List<Rectangle>(); // do debugowania
-            var regions = new List<SubRegion>();
+            _blocks = new List<Rectangle>(); // do debugowania
+            _subRegions = new List<SubRegion>();
 
-            int[] IDs = new int[bmp.Width * bmp.Height];
-
-
-            Rectangle mainBlock = new Rectangle(0, 0, stride, bmp.Height);
+            
+            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
 
             int id = 0;
 
-            for (int i = mainBlock.Y + 1; i < mainBlock.Height; i+= Consts.minimumBlockSize)
+            for (int i = mainBlock.Y; i < mainBlock.Height; i+= Consts.minimumBlockSize)
             {
-                for (int j = 0; j  < mainBlock.Width + 1; j += Consts.minimumBlockSize)
+                for (int j = mainBlock.X; j  < mainBlock.Width; j += Consts.minimumBlockSize)
                 {
                     int newBlockWidth = Consts.minimumBlockSize;
                     int newBlockHeight = Consts.minimumBlockSize;
@@ -98,48 +99,52 @@ namespace Evaluator
                     }
 
                     var newBlock = new Rectangle(i, j, newBlockWidth, newBlockHeight);
-                    blocks.Add(newBlock);
+                    _blocks.Add(newBlock);
                     var newSubRegion = new SubRegion();
                     newSubRegion.Blocks.Add(newBlock);
                     newSubRegion.ID = id++;
 
-                    regions.Add(newSubRegion);
+                    _subRegions.Add(newSubRegion);
                 }
             }
 
+            //mainBlock = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
 
-
-
-
-            
-                        
-            for (int i = mainBlock.Y + 1; i < mainBlock.Height - 1; i++)
-            {
-                for (int j = mainBlock.X + 1; j < mainBlock.Width - 1 - extraStrideBytesPerLine; j++)
-                {
-                    var LBPC = HelperMethods.CountLBPC(greyValues, mainBlock.Width, mainBlock.Width * i + j);
-                    byte LBP = LBPC.LBP;
-                    double C = LBPC.C;
-                    int b = HelperMethods.GetBinFor(C);
-
-                    histogram[(LBP) * Consts.Bins + b]++;
-                    //greyValues[mainBlock.Width * i + j] = 255;
-
-                    //tu problem bo nie mam obrazka 514x514 (wpx na ramke)
-                    //if ((i%Consts.minimumBlockSize == 0) && (j % Consts.minimumBlockSize == 0))
-                    //{
-                    //    greyValues[mainBlock.width * i + j] = 255;
-                    //}
-
-                }
-            }
-
-            NormalizeHistogram(histogram, bmp.Width * bmp.Height);
-            
-            return histogram;
+            var h = GetNormalizedHistogramFrom(mainBlock);
+            return h;
         }
 
-        private static void NormalizeHistogram(double[] histogram, int pixels)
+        private double[] GetNormalizedHistogramFrom(Rectangle block)
+        {
+            for (int i = block.Y; i < block.Height; i++)
+            {
+                for (int j = block.X; j < block.Width; j++)
+                {
+                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmp.Width, _bmp.Width * i + j);                    
+                    int b = HelperMethods.GetBinFor(LBPC.C);
+
+                    _histogram[(LBPC.LBP) * Consts.Bins + b]++;
+                }
+            }
+
+            NormalizeHistogram(_histogram, _bmp.Width * _bmp.Height);
+
+            return _histogram;
+        }
+
+        private double CalculateMSE(double[] histogram1, double[] histogram2)
+        {
+            double sum = 0;
+
+            for (int i = 0; i < histogram1.Length; i++)
+            {
+                sum += Math.Pow((histogram1[i] - histogram2[i]), 2);
+            }
+
+            return sum / histogram1.Length;
+        }
+
+        private void NormalizeHistogram(double[] histogram, int pixels)
         {
             for (int i = 0; i < histogram.Length; i++)
             {
@@ -151,34 +156,8 @@ namespace Evaluator
         //{
         //    extraStrideBytesPerLine
         //}
-
-        //public static byte[] ReadBmpBytesFromFile(string path)
-        //{
-        //    Bitmap bmp = new Bitmap(path);
-
-        //    Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-
-        //    BitmapData bmpData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);
-
-        //    IntPtr ptr = bmpData.Scan0;
-
-        //    int stride = Math.Abs(bmpData.Stride);
-        //    int extraStrideBytesPerLine = stride - bmp.Width;
-
-        //    int bytes = stride * bmp.Height;
-
-        //    byte[] greyValues = new byte[bytes];
-
-        //    int[] histogram = new int[(Consts.MaxLBP + 1) * Consts.Bins];
-
-        //    System.Runtime.InteropServices.Marshal.Copy(ptr, greyValues, 0, bytes);
-
-        //    bmp.UnlockBits(bmpData);
-        //}
-
-
-
-        static private void SaveResults(double[] results)
+        
+        private void SaveResults(double[] results)
         {
             string[] positions = new string[results.Length];
 
