@@ -12,14 +12,12 @@ namespace Evaluator
         public SubRegion()
         {
             Blocks = new List<Rectangle>();
-            //Neighbors = new List<SubRegion>();
+            Neighbors = new List<SubRegion>();
         }
 
-        //public List<SubRegion> Neighbors { get; set; } //TODO KISS
+        public int ID { get; set; }
 
         public List<Rectangle> Blocks { get; set; }
-        
-
-        public int ID { get; set; }
+        public List<SubRegion> Neighbors { get; set; }
     }
 }

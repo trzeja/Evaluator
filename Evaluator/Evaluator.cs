@@ -19,20 +19,19 @@ namespace Evaluator
         private Bitmap _bmp;
         double[] _histogram;
 
-        private List<Rectangle> _blocks;
+        private List<Rectangle> _blocks; // do debugowania
         private List<SubRegion> _subRegions;
 
 
         public void ProcessImages()
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray128.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray64.gif";
 
             ReadFile(path);
-
+            CreateSubRegions();
             var h1 = GetNormalizedHistogramfromFile();
 
             ReadFile(path);
-
             var h2 = GetNormalizedHistogramfromFile();
 
            // SaveResults(h1);
@@ -50,8 +49,7 @@ namespace Evaluator
 
             IntPtr ptr = bmpData.Scan0;
                         
-            _bytes = _bmp.Width * _bmp.Height;
-            
+            _bytes = _bmp.Width * _bmp.Height;            
 
             _greyValues = new byte[_bytes];
             _ID = new byte[_bytes];
@@ -66,24 +64,23 @@ namespace Evaluator
 
         private double[] GetNormalizedHistogramfromFile()
         {
-           
-            int blocksInRow = (int)Math.Ceiling((double)_bmp.Width / (double)Consts.minimumBlockSize);
-            int blocksInCol = (int)Math.Ceiling((double)_bmp.Height / (double)Consts.minimumBlockSize);
-            
-            int blocksTotal = blocksInRow * blocksInRow;
+            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+            var h = GetNormalizedHistogramFrom(mainBlock);
+            return h;
+        }
 
-            //Rectangle[] blocks = new Rectangle[blocksTotal]; //tablioca podobszarow
-            _blocks = new List<Rectangle>(); // do debugowania
+        private void CreateSubRegions()
+        {
+            _blocks = new List<Rectangle>();
             _subRegions = new List<SubRegion>();
 
-            
             Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
 
             int id = 0;
 
-            for (int i = mainBlock.Y; i < mainBlock.Height; i+= Consts.minimumBlockSize)
+            for (int i = mainBlock.Y; i < mainBlock.Height; i += Consts.minimumBlockSize)
             {
-                for (int j = mainBlock.X; j  < mainBlock.Width; j += Consts.minimumBlockSize)
+                for (int j = mainBlock.X; j < mainBlock.Width; j += Consts.minimumBlockSize)
                 {
                     int newBlockWidth = Consts.minimumBlockSize;
                     int newBlockHeight = Consts.minimumBlockSize;
@@ -108,10 +105,24 @@ namespace Evaluator
                 }
             }
 
-            //mainBlock = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
+            //ustaw sasiadow w subRegionach
+           
+            foreach (var region in _subRegions)
+            {
+                var block = region.Blocks.FirstOrDefault();
+                var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.minimumBlockSize + 2, Consts.minimumBlockSize + 2);
+                
+                //var allRegions = _subRegions.Where(s => s.Blocks.FirstOrDefault())
 
-            var h = GetNormalizedHistogramFrom(mainBlock);
-            return h;
+                var regionNeighbors = _subRegions
+                    .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region)).ToList();
+
+                region.Neighbors = regionNeighbors;
+
+            }
+
+            var t = 1;
+
         }
 
         private double[] GetNormalizedHistogramFrom(Rectangle block)
