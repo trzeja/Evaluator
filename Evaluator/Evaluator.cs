@@ -64,7 +64,7 @@ namespace Evaluator
 
         private double[] GetNormalizedHistogramfromFile()
         {
-            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 2, _bmp.Height - 2);
             var h = GetNormalizedHistogramFrom(mainBlock);
             return h;
         }
@@ -74,7 +74,7 @@ namespace Evaluator
             _blocks = new List<Rectangle>();
             _subRegions = new List<SubRegion>();
 
-            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 2, _bmp.Height - 2);
 
             int id = 0;
 
@@ -95,7 +95,7 @@ namespace Evaluator
                         newBlockHeight = mainBlock.Height - i;
                     }
 
-                    var newBlock = new Rectangle(i, j, newBlockWidth, newBlockHeight);
+                    var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
                     _blocks.Add(newBlock);
                     var newSubRegion = new SubRegion();
                     newSubRegion.Blocks.Add(newBlock);
@@ -103,26 +103,22 @@ namespace Evaluator
 
                     _subRegions.Add(newSubRegion);
                 }
-            }
-
-            //ustaw sasiadow w subRegionach
+            }            
            
+            //TODO wydzielic jako osobna funkcje (SetSubRegionsNeighbors)
             foreach (var region in _subRegions)
             {
                 var block = region.Blocks.FirstOrDefault();
+                //create block enlarged by 1 in each direction
                 var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.minimumBlockSize + 2, Consts.minimumBlockSize + 2);
                 
-                //var allRegions = _subRegions.Where(s => s.Blocks.FirstOrDefault())
-
                 var regionNeighbors = _subRegions
-                    .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region)).ToList();
+                    .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
+                    .ToList();
 
                 region.Neighbors = regionNeighbors;
 
-            }
-
-            var t = 1;
-
+            }            
         }
 
         private double[] GetNormalizedHistogramFrom(Rectangle block)
@@ -179,5 +175,6 @@ namespace Evaluator
 
             System.IO.File.WriteAllLines(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\results.txt", positions);
         }
+
     }
 }
