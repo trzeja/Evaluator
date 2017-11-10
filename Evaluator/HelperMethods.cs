@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ namespace Evaluator
 {
     public static class HelperMethods
     {
+        
+
         static public int GetBinFor(double c)
         {
             c += Consts.MaxC; // move to <0,MaxC*2> range from <-MaxC,MaxC>             

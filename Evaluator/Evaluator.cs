@@ -40,7 +40,7 @@ namespace Evaluator
 
             ReadFile(path);
             CreateSubRegions();
-            var h1 = GetNormalizedHistogramfromFile();
+            //var h1 = GetNormalizedHistogramfromFile();
 
             MergeSubRegions();
 
@@ -67,7 +67,7 @@ namespace Evaluator
             _greyValues = new byte[_bytes];
             _ID = new byte[_bytes];
 
-            _histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            //_histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
@@ -114,12 +114,12 @@ namespace Evaluator
         }
              
 
-        private double[] GetNormalizedHistogramfromFile()
-        {
-            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 2, _bmp.Height - 2);
-            var h = GetNormalizedHistogramFrom(mainBlock);
-            return h;
-        }
+        //private double[] GetNormalizedHistogramfromFile()
+        //{
+        //    Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 2, _bmp.Height - 2);
+        //    var h = GetNormalizedHistogramFrom(mainBlock);
+        //    return h;
+        //}
 
         private void CreateSubRegions()
         {
@@ -178,53 +178,36 @@ namespace Evaluator
 
         private void MergeSubRegions()
         {
-            //var histograms = new List<double[]>();
-            double [][] histograms  = new double[16][];
-            int i = 0;
+            // tu bedzie foreach
+            var sr1 = _subRegions.FirstOrDefault();
+            var sr2 = _subRegions.LastOrDefault();
 
-            //byte color = 255;
-            //na razie policz histogrmay dla wszystkich bokow <-dzialalo
-            foreach (var region in _subRegions)
+            int pixels1 = sr1.GetPixelCount();
+            int pixels2 = sr2.GetPixelCount();
+
+            int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
+            var sr1h = sr1.GetNormalizedHistogram(_greyValues,_bmp.Width);
+            var sr2h = sr2.GetNormalizedHistogram(_greyValues, _bmp.Width);
+
+            double MSE = CalculateMSE(sr1h, sr2h);
+            var MRI = p * MSE;
+
+            var mergers = new List<Tuple<int, int>>();
+                        
+            for (int i = 0; i < _subRegions.Count; i++)
             {
-                var block = region.Blocks.FirstOrDefault();
-
-                var h = GetNormalizedHistogramFrom(block/*, color*/);
-                //histograms.Add(h);
-                histograms[i++] = h;
-                //color -= 10;
-            }
-
-            double MSE = 0;
-
-            
-            for (int k = 0; k < 14; k++)
-            {
-                MSE = CalculateMSE(histograms[k], histograms[k+1]);
-            }
-            //TODO bloki sa tworzone w dobrych lokalizacjach (draw)
-            //jednak MSE miedzy wzystkimi = 0, czemu? czyzby za kazdym razem dostawal ten sam histogram? cos nie tak z 
-            //funkcja GetNormalizedHistogram pewno
-
-        }
-
-        private double[] GetNormalizedHistogramFrom(Rectangle block, byte color=0)
-        {
-            for (int i = block.Y; i < block.Y + block.Height; i++)
-            {
-                for (int j = block.X; j < block.X + block.Width; j++)
+                var neighborsIDs = _subRegions[i].GetNeighboursIDs();
+                foreach (var nID in neighborsIDs)
                 {
-                    //_greyValues[_bmp.Width * i + j] = color;//debug
-                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmp.Width, _bmp.Width * i + j);                    
-                    int b = HelperMethods.GetBinFor(LBPC.C);
-
-                    _histogram[(LBPC.LBP) * Consts.Bins + b]++;
+                    if (nID < i)
+                    {
+                        continue; //not adding pair with ID of already processed subRegion
+                    }
+                    var mergePair = new Tuple<int, int>(_subRegions[i].ID, nID);
+                    mergers.Add(mergePair);
                 }
             }
-
-            NormalizeHistogram(_histogram, block.Width * block.Height);
-
-            return _histogram;
-        }
+        }        
 
         private double CalculateMSE(double[] histogram1, double[] histogram2)
         {
@@ -238,13 +221,6 @@ namespace Evaluator
             return sum / histogram1.Length;
         }
 
-        private void NormalizeHistogram(double[] histogram, int pixels)
-        {
-            for (int i = 0; i < histogram.Length; i++)
-            {
-                histogram[i] /= pixels;
-            }
-        }
 
         //private void MainLoop()
         //{
