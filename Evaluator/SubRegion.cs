@@ -20,9 +20,32 @@ namespace Evaluator
         public List<Rectangle> Blocks { get; set; }//to bedzie prywatne docelowo chyba
         public List<SubRegion> Neighbors { get; set; } //to bedzie prywatne docelowo chyba
 
+        //public List<SubRegion> GetNeighbors()
+        //{
+        //    return Neighbors;
+        //}
+
         public List<int> GetNeighboursIDs()
         {
             return new List<int>(Neighbors.Select(n => n.ID));
+        }
+
+        public void RemoveNeighbor(int neighborID)
+        {
+            Neighbors.Remove(Neighbors.Find(n => n.ID == neighborID));
+        }
+
+        public void AddNeighbor(SubRegion newNeighbor)
+        {
+            if (!Neighbors.Contains(newNeighbor) && newNeighbor.ID != ID)
+            {
+                Neighbors.Add(newNeighbor);
+            }
+        }
+
+        public void AddBlocks(List<Rectangle> blocks)
+        {
+            Blocks.AddRange(blocks);
         }
 
         public int GetPixelCount()
@@ -49,12 +72,20 @@ namespace Evaluator
                 for (int i = 0; i < subRegionHistogram.Length; i++)
                 {
                     subRegionHistogram[i] += blockHistogram[i];
-                }               
+                }
             }
 
             NormalizeHistogram(subRegionHistogram, pixels);
 
             return subRegionHistogram;
+        }
+
+        public void SaveIDInArray(int[] IDs, int bmpWidth)
+        {
+            foreach (var block in Blocks)
+            {
+                SaveBlockIDInArray(block, IDs, bmpWidth);
+            }
         }
 
         private double[] GetHistogramFrom(Rectangle block, byte[] greyValues, int bmpWidth)
@@ -71,7 +102,7 @@ namespace Evaluator
                     histogram[(LBPC.LBP) * Consts.Bins + b]++;
                 }
             }
-            
+
             return histogram;
         }
 
@@ -102,10 +133,18 @@ namespace Evaluator
                 histogram[i] /= pixels;
             }
         }
-
-        private void AddHistogrms(double[] sourceHistogram, double[] sourceAndDestinationHistogram)
+        
+        private void SaveBlockIDInArray(Rectangle block, int[] IDs, int bmpWidth)
         {
+            var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
+            for (int i = block.Y; i < block.Y + block.Height; i++)
+            {
+                for (int j = block.X; j < block.X + block.Width; j++)
+                {
+                    IDs[bmpWidth * i + j] = ID;
+                }
+            }
         }
     }
 }

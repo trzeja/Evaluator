@@ -15,7 +15,7 @@ namespace Evaluator
         private byte[] _greyValues;
 
 
-        private byte[] _ID;
+        private int[] _ID;
         private Bitmap _bmp;
         double[] _histogram;
 
@@ -42,8 +42,9 @@ namespace Evaluator
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
 
-            MergeSubRegions();
+            Merge();
 
+            SaveIDsInArray();
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
 
@@ -65,7 +66,7 @@ namespace Evaluator
             _bytes = _bmp.Width * _bmp.Height;            
 
             _greyValues = new byte[_bytes];
-            _ID = new byte[_bytes];
+            _ID = new int[_bytes];
 
             //_histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
@@ -88,7 +89,7 @@ namespace Evaluator
             _bytes = _bmp.Width * _bmp.Height;
 
             _greyValues = new byte[_bytes];
-            _ID = new byte[_bytes];
+            _ID = new int[_bytes];
 
             _histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
@@ -176,38 +177,88 @@ namespace Evaluator
             }
         }
 
-        private void MergeSubRegions()
+        private void Merge()
         {
-            // tu bedzie foreach
-            var sr1 = _subRegions.FirstOrDefault();
-            var sr2 = _subRegions.LastOrDefault();
+            var mergers = CreateMergeList();
+            CalculateMIsFor(mergers);
+            
+            //tu bedzie for i warunek stopu Y
+            var smallestMIMergeIdx = 0;
+            for (int i = 1; i < mergers.Count; i++)
+            {
+                if (mergers[i].MI < mergers[smallestMIMergeIdx].MI)
+                {
+                    smallestMIMergeIdx = i;
+                }
+            }
 
-            int pixels1 = sr1.GetPixelCount();
-            int pixels2 = sr2.GetPixelCount();
+            var pairToMarge = mergers[smallestMIMergeIdx];
+            MergePair(pairToMarge);
+            // Merge 2 regions of smallestMIMergeIdx
+            //...                   
+        }
 
-            int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
-            var sr1h = sr1.GetNormalizedHistogram(_greyValues,_bmp.Width);
-            var sr2h = sr2.GetNormalizedHistogram(_greyValues, _bmp.Width);
+        private void MergePair(Merge pair)
+        {
+            var subRegionToRemain = _subRegions[pair.SubRegion1ID];
+            var subRegionToDelete = _subRegions[pair.SubRegion2ID];
 
-            double MSE = CalculateMSE(sr1h, sr2h);
-            var MRI = p * MSE;
+            var subRegionToDeleteNeighbors = subRegionToDelete.Neighbors;
 
-            var mergers = new List<Tuple<int, int>>();
-                        
+            foreach (var neighbor in subRegionToDeleteNeighbors)
+            {
+                neighbor.RemoveNeighbor(subRegionToDelete.ID);
+                neighbor.AddNeighbor(subRegionToRemain);
+                subRegionToRemain.AddNeighbor(neighbor);
+            }
+            //trzbea przekazac bloki usuwanego zjadajacemu
+            subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);                
+            
+            _subRegions.Remove(subRegionToDelete);
+        }
+
+        private List<Merge> CreateMergeList()
+        {
+            var mergers = new List<Merge>();
+
             for (int i = 0; i < _subRegions.Count; i++)
             {
                 var neighborsIDs = _subRegions[i].GetNeighboursIDs();
-                foreach (var nID in neighborsIDs)
+                foreach (var neighborID in neighborsIDs)
                 {
-                    if (nID < i)
+                    if (neighborID < i)
                     {
                         continue; //not adding pair with ID of already processed subRegion
                     }
-                    var mergePair = new Tuple<int, int>(_subRegions[i].ID, nID);
-                    mergers.Add(mergePair);
+                    var mergePair = new Merge() { SubRegion1ID = _subRegions[i].ID , SubRegion2ID = neighborID, MI = double.MaxValue };
+                    
+                    mergers.Add(mergePair);                    
                 }
             }
-        }        
+
+            return mergers;
+        }
+
+        private void CalculateMIsFor(List<Merge> mergers)
+        {
+            foreach (var merge in mergers)
+            {
+                var subRegion1 = _subRegions[merge.SubRegion1ID];
+                var subRegion2 = _subRegions[merge.SubRegion2ID];
+
+                int pixels1 = subRegion1.GetPixelCount();
+                int pixels2 = subRegion2.GetPixelCount();
+
+                int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
+                var sr1h = subRegion1.GetNormalizedHistogram(_greyValues, _bmp.Width);
+                var sr2h = subRegion2.GetNormalizedHistogram(_greyValues, _bmp.Width);
+
+                double MSE = CalculateMSE(sr1h, sr2h);
+                var MI = p * MSE;
+
+                merge.MI = MI;
+            }
+        }
 
         private double CalculateMSE(double[] histogram1, double[] histogram2)
         {
@@ -221,12 +272,6 @@ namespace Evaluator
             return sum / histogram1.Length;
         }
 
-
-        //private void MainLoop()
-        //{
-        //    extraStrideBytesPerLine
-        //}
-        
         private void SaveResults(double[] results)
         {
             string[] positions = new string[results.Length];
@@ -238,6 +283,16 @@ namespace Evaluator
 
             System.IO.File.WriteAllLines(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\results.txt", positions);
         }
+
+        private void SaveIDsInArray()
+        {
+            foreach (var region in _subRegions)
+            {
+                region.SaveIDInArray(_ID, _bmp.Width);
+            }
+        }
+
+        //ladnie sie do tablicy IDs wsadzaja, teraz by sie przydalo by zapis do pliku obrazowal kwadraty.. /t?
 
     }
 }
