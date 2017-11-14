@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing; // dodac nalezy referencje
 using System.Drawing.Imaging;
+using System.IO;
 
 namespace Evaluator
 {
@@ -45,6 +46,7 @@ namespace Evaluator
             Merge();
 
             SaveIDsInArray();
+            SaveIDArrayInFile();
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
 
@@ -292,7 +294,23 @@ namespace Evaluator
             }
         }
 
-        //ladnie sie do tablicy IDs wsadzaja, teraz by sie przydalo by zapis do pliku obrazowal kwadraty.. /t?
+        private void SaveIDArrayInFile()
+        {
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\IDmap.txt";
 
+            var sb = new StringBuilder();
+            for (int i = 0; i < _ID.Length; i++)
+            {
+                var id = _ID[i].ToString("X");                
+                sb.Append(id);
+                if ((i + 1)%_bmp.Width == 0 && i !=0)
+                {
+                    sb.Append(Environment.NewLine);
+                }
+            }
+            
+            File.WriteAllText(path, sb.ToString());
+        }
+        
     }
 }
