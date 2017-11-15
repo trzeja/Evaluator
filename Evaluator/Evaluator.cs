@@ -45,8 +45,7 @@ namespace Evaluator
 
             Merge();
 
-            SaveIDsInArray();
-            SaveIDArrayInFile();
+            
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
 
@@ -183,24 +182,37 @@ namespace Evaluator
         {
             var mergers = CreateMergeList();
             CalculateMIsFor(mergers);
-            
-            //tu bedzie for i warunek stopu Y
-            var smallestMIMergeIdx = 0;
-            for (int i = 1; i < mergers.Count; i++)
-            {
-                if (mergers[i].MI < mergers[smallestMIMergeIdx].MI)
+
+            //to trza zapetlic z wwrukiem Y
+            // na razie 5 razy
+            for (int k = 0; k < 14; k++)
+            {               
+                //tu bedzie for i warunek stopu Y
+                var smallestMIMergeIdx = 0;
+                for (int i = 1; i < mergers.Count; i++)
                 {
-                    smallestMIMergeIdx = i;
+                    if (mergers[i].MI < mergers[smallestMIMergeIdx].MI)
+                    {
+                        smallestMIMergeIdx = i;
+                    }
                 }
+
+                var pairToMarge = mergers[smallestMIMergeIdx];
+                var newMergePairs = MergePair(pairToMarge);
+
+                RemoveOldMergers(mergers,pairToMarge);                               
+                                
+                CalculateMIsFor(newMergePairs);
+                mergers.AddRange(newMergePairs);
+                
+                //debug
+                SaveIDsInArray();
+                SaveIDArrayInFile(k);             
             }
 
-            var pairToMarge = mergers[smallestMIMergeIdx];
-            MergePair(pairToMarge);
-            // Merge 2 regions of smallestMIMergeIdx
-            //...                   
         }
 
-        private void MergePair(Merge pair)
+        private List<Merge> MergePair(Merge pair)
         {
             var subRegionToRemain = _subRegions[pair.SubRegion1ID];
             var subRegionToDelete = _subRegions[pair.SubRegion2ID];
@@ -213,10 +225,31 @@ namespace Evaluator
                 neighbor.AddNeighbor(subRegionToRemain);
                 subRegionToRemain.AddNeighbor(neighbor);
             }
-            //trzbea przekazac bloki usuwanego zjadajacemu
+            
             subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);                
             
-            _subRegions.Remove(subRegionToDelete);
+            _subRegions[subRegionToDelete.ID] = null; //po usunietym subregionie zostaje null
+
+            var newMergePairs = new List<Merge>();
+            foreach (var neighbor in subRegionToRemain.Neighbors)
+            {
+                newMergePairs.Add(new Merge()
+                {
+                    SubRegion1ID = subRegionToRemain.ID,
+                    SubRegion2ID = neighbor.ID,
+                    MI = double.MaxValue
+                });
+            }
+
+            return newMergePairs;
+        }
+
+        private void RemoveOldMergers(List<Merge> mergers, Merge pairToMarge)
+        {
+            mergers.RemoveAll(m => m.SubRegion1ID == pairToMarge.SubRegion1ID
+                || m.SubRegion1ID == pairToMarge.SubRegion2ID
+                || m.SubRegion2ID == pairToMarge.SubRegion1ID
+                || m.SubRegion2ID == pairToMarge.SubRegion2ID);
         }
 
         private List<Merge> CreateMergeList()
@@ -232,7 +265,13 @@ namespace Evaluator
                     {
                         continue; //not adding pair with ID of already processed subRegion
                     }
-                    var mergePair = new Merge() { SubRegion1ID = _subRegions[i].ID , SubRegion2ID = neighborID, MI = double.MaxValue };
+
+                    var mergePair = new Merge()
+                    {
+                        SubRegion1ID = _subRegions[i].ID ,
+                        SubRegion2ID = neighborID,
+                        MI = double.MaxValue
+                    };
                     
                     mergers.Add(mergePair);                    
                 }
@@ -290,13 +329,17 @@ namespace Evaluator
         {
             foreach (var region in _subRegions)
             {
+                if (region == null)
+                {
+                    continue;
+                }
                 region.SaveIDInArray(_ID, _bmp.Width);
             }
         }
 
-        private void SaveIDArrayInFile()
+        private void SaveIDArrayInFile(int k)
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\IDmap.txt";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\IDmap" + k.ToString() +".txt";
 
             var sb = new StringBuilder();
             for (int i = 0; i < _ID.Length; i++)
