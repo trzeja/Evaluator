@@ -67,8 +67,8 @@ namespace Evaluator
             _bytes = _bmp.Width * _bmp.Height;            
 
             _greyValues = new byte[_bytes];
-            _ID = new int[_bytes];
-
+            //_ID = new int[_bytes];
+            _ID =  Enumerable.Repeat(-1, _bytes).ToArray();
             //_histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
@@ -208,6 +208,7 @@ namespace Evaluator
                 //debug
                 SaveIDsInArray();
                 SaveIDArrayInFile(k);             
+
             }
 
         }
