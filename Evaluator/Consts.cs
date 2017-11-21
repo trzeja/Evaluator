@@ -21,11 +21,10 @@ namespace Evaluator
 
 
         public const byte MaxLBP = 255;
-
-
-
+        
         public const int minimumBlockSize = 16;
 
+        public const double Y = 2.00;
     }
 
 }

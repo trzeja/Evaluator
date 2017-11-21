@@ -29,7 +29,9 @@ namespace Evaluator
 
         public void ProcessImages()
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray64.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic1.gif";
 
             //debug
             //ReadFileWithSaveOption(path);
@@ -43,9 +45,22 @@ namespace Evaluator
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
 
-            Merge();
+            var MIRs = new List<string>();
 
-            
+            Merge(MIRs);
+
+            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap.txt";
+
+            var sb = new StringBuilder();
+            foreach (var MIR in MIRs)
+            {
+                sb.Append(MIR + Environment.NewLine);
+            }           
+
+            File.WriteAllText(path1, sb.ToString().Replace('.',','));
+
+
+
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
 
@@ -67,9 +82,9 @@ namespace Evaluator
             _bytes = _bmp.Width * _bmp.Height;            
 
             _greyValues = new byte[_bytes];
-            //_ID = new int[_bytes];
+            SubRegion.Init(_greyValues, _bmp.Width);
+
             _ID =  Enumerable.Repeat(-1, _bytes).ToArray();
-            //_histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
@@ -114,14 +129,6 @@ namespace Evaluator
 
             System.Diagnostics.Process.Start(output);
         }
-             
-
-        //private double[] GetNormalizedHistogramfromFile()
-        //{
-        //    Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 2, _bmp.Height - 2);
-        //    var h = GetNormalizedHistogramFrom(mainBlock);
-        //    return h;
-        //}
 
         private void CreateSubRegions()
         {
@@ -150,10 +157,12 @@ namespace Evaluator
                     }
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
-                    _blocks.Add(newBlock);
-                    var newSubRegion = new SubRegion();
+                    //_blocks.Add(newBlock);
+                    var newSubRegion = new SubRegion(newBlock);
+                    //newSubRegion.AddBlock(newBlock);
                     newSubRegion.Blocks.Add(newBlock);
                     newSubRegion.ID = id++;
+                    
 
                     _subRegions.Add(newSubRegion);
                 }
@@ -178,39 +187,57 @@ namespace Evaluator
             }
         }
 
-        private void Merge()
+        private void Merge(List<string> MIRs)
         {
-            var mergers = CreateMergeList();
-            CalculateMIsFor(mergers);
+            double MImax = double.MinValue;
+            double MIcur;
+            double MIR = double.MinValue;
 
-            //to trza zapetlic z wwrukiem Y
-            // na razie 5 razy
-            for (int k = 0; k < 14; k++)
-            {               
-                //tu bedzie for i warunek stopu Y
-                var smallestMIMergeIdx = 0;
-                for (int i = 1; i < mergers.Count; i++)
+            var mergers = CreateMergeList();
+            CalculateMIsFor(mergers);            
+
+            int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
+            int k = 0; // debug
+
+            var smallestMIMerge = mergers.FirstOrDefault();
+            
+            while (oneTenthOfAllPossibleMergers-- > 0 /*|| MIR < Consts.Y*/)
+            {
+                Console.WriteLine(oneTenthOfAllPossibleMergers);
+
+                foreach (var merge in mergers)
                 {
-                    if (mergers[i].MI < mergers[smallestMIMergeIdx].MI)
+                    if (merge.MI < smallestMIMerge.MI)
                     {
-                        smallestMIMergeIdx = i;
+                        smallestMIMerge = merge;
+                    }
+                    else if (merge.MI > MImax)
+                    {
+                        MImax = merge.MI;
                     }
                 }
 
-                var pairToMarge = mergers[smallestMIMergeIdx];
+                var pairToMarge = smallestMIMerge;
+                MIcur = pairToMarge.MI;  
+                MIR = MIcur / MImax;
+
                 var newMergePairs = MergePair(pairToMarge);
 
-                RemoveOldMergers(mergers,pairToMarge);                               
-                                
-                CalculateMIsFor(newMergePairs);
+                RemoveOldMergers(mergers, pairToMarge);
+                smallestMIMerge.MI = double.MaxValue;
+
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                CalculateMIsFor(newMergePairs); 
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+
                 mergers.AddRange(newMergePairs);
-                
+
                 //debug
-                SaveIDsInArray();
-                SaveIDArrayInFile(k);             
-
+                //SaveIDsInArray();
+                //SaveIDArrayInFile(k++);
+                MIRs.Add(MIR.ToString());
             }
-
         }
 
         private List<Merge> MergePair(Merge pair)
@@ -288,14 +315,24 @@ namespace Evaluator
                 var subRegion1 = _subRegions[merge.SubRegion1ID];
                 var subRegion2 = _subRegions[merge.SubRegion2ID];
 
+                var watch = System.Diagnostics.Stopwatch.StartNew();       
                 int pixels1 = subRegion1.GetPixelCount();
                 int pixels2 = subRegion2.GetPixelCount();
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
 
                 int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
-                var sr1h = subRegion1.GetNormalizedHistogram(_greyValues, _bmp.Width);
-                var sr2h = subRegion2.GetNormalizedHistogram(_greyValues, _bmp.Width);
 
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                var sr1h = subRegion1.SubRegionHistogram;
+                var sr2h = subRegion2.SubRegionHistogram;
+                watch.Stop();
+                elapsedMs = watch.ElapsedMilliseconds;
+
+                watch = System.Diagnostics.Stopwatch.StartNew();
                 double MSE = CalculateMSE(sr1h, sr2h);
+                watch.Stop();
+                elapsedMs = watch.ElapsedMilliseconds;
                 var MI = p * MSE;
 
                 merge.MI = MI;
@@ -340,7 +377,7 @@ namespace Evaluator
 
         private void SaveIDArrayInFile(int k)
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\IDmap" + k.ToString() +".txt";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap" + k.ToString() +".txt";
 
             var sb = new StringBuilder();
             for (int i = 0; i < _ID.Length; i++)

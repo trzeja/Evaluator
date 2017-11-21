@@ -9,10 +9,27 @@ namespace Evaluator
 {
     public class SubRegion
     {
-        public SubRegion()
+        //double[] _subRegionHistogram;
+        
+        private static int _bmpWidth;
+        private static byte[] _greyValues;
+
+        public SubRegion(Rectangle block)
         {
             Blocks = new List<Rectangle>();
             Neighbors = new List<SubRegion>();
+
+            Blocks.Add(block);
+            SubRegionHistogram = GetHistogramFrom(block);
+        }
+                
+        public double[] SubRegionHistogram { get; private set; }
+
+
+        public static void Init(byte[] greyValues, int bmpWidth)
+        {
+            _bmpWidth = bmpWidth;
+            _greyValues = greyValues;
         }
 
         public int ID { get; set; }
@@ -42,10 +59,18 @@ namespace Evaluator
                 Neighbors.Add(newNeighbor);
             }
         }
+        //na razie dodawanie poj. bloku tylko w CreateSubregions() wiec mzoe byc histogramem subRegionu hist bloku, ale jak
+        //hirarchical splitting to trzeba zmienic na dodawnie histogrmu do obecnego
+        //public void AddBlock(Rectangle block)
+        //{
+        //    Blocks.Add(block);
+        //    _subRegionHistogram = GetHistogramFrom(block);
+        //}
 
         public void AddBlocks(List<Rectangle> blocks)
         {
             Blocks.AddRange(blocks);
+            //TODO add new histograms to existing or recalculate whole 
         }
 
         public int GetPixelCount()
@@ -60,24 +85,24 @@ namespace Evaluator
             return count;
         }
 
-        public double[] GetNormalizedHistogram(byte[] greyValues, int bmpWidth)
+        public double[] CalculateNormalizedHistogram()
         {
-            var subRegionHistogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            SubRegionHistogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
             int pixels = GetPixelCount();
 
             foreach (var block in Blocks)
             {
-                var blockHistogram = GetHistogramFrom(block, greyValues, bmpWidth);
+                var blockHistogram = GetHistogramFrom(block);
 
-                for (int i = 0; i < subRegionHistogram.Length; i++)
+                for (int i = 0; i < SubRegionHistogram.Length; i++)
                 {
-                    subRegionHistogram[i] += blockHistogram[i];
+                    SubRegionHistogram[i] += blockHistogram[i];
                 }
             }
 
-            NormalizeHistogram(subRegionHistogram, pixels);
+            NormalizeHistogram(SubRegionHistogram, pixels);
 
-            return subRegionHistogram;
+            return SubRegionHistogram;
         }
 
         public void SaveIDInArray(int[] IDs, int bmpWidth)
@@ -88,7 +113,7 @@ namespace Evaluator
             }
         }
 
-        private double[] GetHistogramFrom(Rectangle block, byte[] greyValues, int bmpWidth)
+        private double[] GetHistogramFrom(Rectangle block)
         {
             var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
 
@@ -96,7 +121,7 @@ namespace Evaluator
             {
                 for (int j = block.X; j < block.X + block.Width; j++)
                 {
-                    var LBPC = HelperMethods.CountLBPC(greyValues, bmpWidth, bmpWidth * i + j);
+                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmpWidth, _bmpWidth * i + j);
                     int b = HelperMethods.GetBinFor(LBPC.C);
 
                     histogram[(LBPC.LBP) * Consts.Bins + b]++;
@@ -105,26 +130,6 @@ namespace Evaluator
 
             return histogram;
         }
-
-        //private double[] GetNormalizedHistogramFrom(Rectangle block)
-        //{
-        //    var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
-
-        //    for (int i = block.Y; i < block.Y + block.Height; i++)
-        //    {
-        //        for (int j = block.X; j < block.X + block.Width; j++)
-        //        {
-        //            var LBPC = HelperMethods.CountLBPC(_greyValues, _bmp.Width, _bmp.Width * i + j);
-        //            int b = HelperMethods.GetBinFor(LBPC.C);
-
-        //            histogram[(LBPC.LBP) * Consts.Bins + b]++;
-        //        }
-        //    }
-
-        //    NormalizeHistogram(histogram, block.Width * block.Height);
-
-        //    return histogram;
-        //}
 
         private void NormalizeHistogram(double[] histogram, int pixels)
         {
