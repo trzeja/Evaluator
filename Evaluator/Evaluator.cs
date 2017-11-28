@@ -15,7 +15,6 @@ namespace Evaluator
         private int _bytes;
         private byte[] _greyValues;
 
-
         private int[] _ID;
         private Bitmap _bmp;
         double[] _histogram;
@@ -158,9 +157,7 @@ namespace Evaluator
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
                     //_blocks.Add(newBlock);
-                    var newSubRegion = new SubRegion(newBlock);
-                    //newSubRegion.AddBlock(newBlock);
-                    newSubRegion.Blocks.Add(newBlock);
+                    var newSubRegion = new SubRegion(newBlock);                    
                     newSubRegion.ID = id++;
                     
 
@@ -314,27 +311,18 @@ namespace Evaluator
             {
                 var subRegion1 = _subRegions[merge.SubRegion1ID];
                 var subRegion2 = _subRegions[merge.SubRegion2ID];
-
-                var watch = System.Diagnostics.Stopwatch.StartNew();       
+                                       
                 int pixels1 = subRegion1.GetPixelCount();
                 int pixels2 = subRegion2.GetPixelCount();
-                watch.Stop();
-                var elapsedMs = watch.ElapsedMilliseconds;
-
+                
                 int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
-
-                watch = System.Diagnostics.Stopwatch.StartNew();
+                                
                 var sr1h = subRegion1.SubRegionHistogram;
                 var sr2h = subRegion2.SubRegionHistogram;
-                watch.Stop();
-                elapsedMs = watch.ElapsedMilliseconds;
-
-                watch = System.Diagnostics.Stopwatch.StartNew();
+                               
                 double MSE = CalculateMSE(sr1h, sr2h);
-                watch.Stop();
-                elapsedMs = watch.ElapsedMilliseconds;
+                
                 var MI = p * MSE;
-
                 merge.MI = MI;
             }
         }

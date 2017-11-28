@@ -10,7 +10,7 @@ namespace Evaluator
     public class SubRegion
     {
         //double[] _subRegionHistogram;
-        
+            
         private static int _bmpWidth;
         private static byte[] _greyValues;
 
@@ -70,7 +70,11 @@ namespace Evaluator
         public void AddBlocks(List<Rectangle> blocks)
         {
             Blocks.AddRange(blocks);
+            //nieoptymalnie
+            CalculateNormalizedHistogram();
+
             //TODO add new histograms to existing or recalculate whole 
+            
         }
 
         public int GetPixelCount()
