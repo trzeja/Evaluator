@@ -156,7 +156,6 @@ namespace Evaluator
                     }
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
-                    //_blocks.Add(newBlock);
                     var newSubRegion = new SubRegion(newBlock);                    
                     newSubRegion.ID = id++;
                     
@@ -198,7 +197,7 @@ namespace Evaluator
 
             var smallestMIMerge = mergers.FirstOrDefault();
             
-            while (oneTenthOfAllPossibleMergers-- > 0 /*|| MIR < Consts.Y*/)
+            while (oneTenthOfAllPossibleMergers-- > -600 /*|| MIR < Consts.Y*/)
             {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
 
@@ -312,8 +311,8 @@ namespace Evaluator
                 var subRegion1 = _subRegions[merge.SubRegion1ID];
                 var subRegion2 = _subRegions[merge.SubRegion2ID];
                                        
-                int pixels1 = subRegion1.GetPixelCount();
-                int pixels2 = subRegion2.GetPixelCount();
+                int pixels1 = subRegion1.Pixels;
+                int pixels2 = subRegion2.Pixels;
                 
                 int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
                                 

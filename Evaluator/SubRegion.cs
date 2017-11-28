@@ -21,9 +21,11 @@ namespace Evaluator
 
             Blocks.Add(block);
             SubRegionHistogram = GetHistogramFrom(block);
+            Pixels = block.Width * block.Height;
         }
                 
         public double[] SubRegionHistogram { get; private set; }
+        public int Pixels { get; private set; }
 
 
         public static void Init(byte[] greyValues, int bmpWidth)
@@ -70,30 +72,33 @@ namespace Evaluator
         public void AddBlocks(List<Rectangle> blocks)
         {
             Blocks.AddRange(blocks);
-            //nieoptymalnie
-            CalculateNormalizedHistogram();
 
-            //TODO add new histograms to existing or recalculate whole 
+            foreach (var block in blocks)
+            {
+                Pixels += block.Width * block.Height;
+            }
+
+            //nieoptymalnie
+            CalculateNormalizedHistogram(); //TODO add new histograms to existing or recalculate whole 
             
         }
 
-        public int GetPixelCount()
-        {
-            int count = 0;
+        //public int GetPixelCount()
+        //{
+        //    int count = 0;
 
-            foreach (var block in Blocks)
-            {
-                count += block.Width * block.Height;
-            }
+        //    foreach (var block in Blocks)
+        //    {
+        //        count += block.Width * block.Height;
+        //    }
 
-            return count;
-        }
+        //    return count;
+        //}
 
         public double[] CalculateNormalizedHistogram()
         {
             SubRegionHistogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
-            int pixels = GetPixelCount();
-
+            
             foreach (var block in Blocks)
             {
                 var blockHistogram = GetHistogramFrom(block);
@@ -104,7 +109,7 @@ namespace Evaluator
                 }
             }
 
-            NormalizeHistogram(SubRegionHistogram, pixels);
+            NormalizeHistogram(SubRegionHistogram, Pixels);
 
             return SubRegionHistogram;
         }
