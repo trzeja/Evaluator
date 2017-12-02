@@ -30,7 +30,7 @@ namespace Evaluator
             int smallerNeighborsSum = 0;
             int smallerNeighborsCount = 0;
 
-            #region NeighboursIndexes
+            #region NeighborsIndexes
 
             int northWestNeighborIdx = pixelIdx - width - 1;
             int northNeighborIdx = pixelIdx - width;

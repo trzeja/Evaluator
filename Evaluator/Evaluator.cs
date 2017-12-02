@@ -24,13 +24,17 @@ namespace Evaluator
 
         public void ProcessImages()
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray64.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
 
             ReadFile(path);
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
+            SaveIDsInArray();
+            DrawBoundariesInFile(path);
+
 
             Merge();
+            DrawBoundariesInFile(path);
 
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
@@ -62,6 +66,78 @@ namespace Evaluator
 
             _subRegionIDCounter = 0;
         }
+
+        private void DrawBoundariesInFile(string path)
+        {
+            _bmp = new Bitmap(path);
+
+            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
+            BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
+                _bmp.PixelFormat);
+
+            IntPtr ptr = bmpData.Scan0;
+
+            _bytes = _bmp.Width * _bmp.Height;
+            _greyValues = new byte[_bytes];
+            //_ID = Enumerable.Repeat(-1, _bytes).ToArray();
+
+            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
+
+            //SubRegion.Init(_greyValues, _bmp.Width);
+                      
+            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+
+            for (int i = mainBlock.Y; i < mainBlock.Height; i ++)
+            {
+                for (int j = mainBlock.X; j < mainBlock.Width; j ++)
+                {                    
+                    ChangePixelToWhiteIfFrontier(_bmp.Width * i + j); //spr czy bmp.width dobre
+                }
+            }
+                        
+            System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, ptr, _bytes);
+            
+            _bmp.UnlockBits(bmpData);
+            
+            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_grayDrawed.gif";
+            
+            _bmp.Save(output);
+            
+            System.Diagnostics.Process.Start(output);
+        }
+
+        private void ChangePixelToWhiteIfFrontier(int pixelIdx)
+        {
+            var neighborsIndexes = new List<int>();
+
+            int northWestNeighborIdx = pixelIdx - _bmp.Width - 1;
+            neighborsIndexes.Add(northWestNeighborIdx);
+            int northNeighborIdx = pixelIdx - _bmp.Width;
+            neighborsIndexes.Add(northNeighborIdx);
+            int northEastNeighborIdx = pixelIdx - _bmp.Width + 1;
+            neighborsIndexes.Add(northEastNeighborIdx);
+
+            int eastNeighborIdx = pixelIdx + 1;
+            neighborsIndexes.Add(eastNeighborIdx);
+            int westNeighborIdx = pixelIdx - 1;
+            neighborsIndexes.Add(westNeighborIdx);
+
+            int southWestNeighborIdx = pixelIdx + _bmp.Width - 1;
+            neighborsIndexes.Add(southWestNeighborIdx);
+            int southNeighborIdx = pixelIdx + _bmp.Width;
+            neighborsIndexes.Add(southNeighborIdx);
+            int southEastNeighborIdx = pixelIdx + _bmp.Width + 1;
+            neighborsIndexes.Add(southEastNeighborIdx);
+
+            foreach (var neighborIdx in neighborsIndexes)
+            {
+                if (_ID[pixelIdx] != _ID[neighborIdx])
+                {
+                    _greyValues[pixelIdx] = 0;
+                }
+            }            
+        }
+
 
         private void CreateSubRegions()
         {
@@ -189,7 +265,7 @@ namespace Evaluator
             int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
             Merge smallestMIMerge;
 
-            while (oneTenthOfAllPossibleMergers-- > -10 /*|| MIR < Consts.Y*/)
+            while (oneTenthOfAllPossibleMergers-- > -83 /*|| MIR < Consts.Y*/)
             {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
 

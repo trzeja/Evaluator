@@ -22,9 +22,9 @@ namespace Evaluator
 
         public const byte MaxLBP = 255;
         
-        public const int SMin = 2;
+        public const int SMin = 16;
        
-        public const int SMax = 8;
+        public const int SMax = 4*SMin;
 
         public const double Y = 2.0;
 
