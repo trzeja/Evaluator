@@ -44,7 +44,6 @@ namespace Evaluator
             int southEastNeighborIdx = pixelIdx + width + 1;
 
             #endregion
-                       
             
             if (greyValues[pixelIdx] <= greyValues[northWestNeighborIdx])
             {

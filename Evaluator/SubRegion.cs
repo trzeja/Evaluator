@@ -14,17 +14,19 @@ namespace Evaluator
         private static int _bmpWidth;
         private static byte[] _greyValues;
 
-        public SubRegion(Rectangle block)
+        public SubRegion(Rectangle block, int id)
         {
+            ID = id;
+
             Blocks = new List<Rectangle>();
             Neighbors = new List<SubRegion>();
 
             Blocks.Add(block);
-            SubRegionHistogram = GetHistogramFrom(block);
+            Histogram = GetHistogramFrom(block);
             Pixels = block.Width * block.Height;
         }
                 
-        public double[] SubRegionHistogram { get; private set; }
+        public double[] Histogram { get; private set; }
         public int Pixels { get; private set; }
 
 
@@ -34,7 +36,7 @@ namespace Evaluator
             _greyValues = greyValues;
         }
 
-        public int ID { get; set; }
+        public int ID { get; private set; }
 
         public List<Rectangle> Blocks { get; set; }//to bedzie prywatne docelowo chyba
         public List<SubRegion> Neighbors { get; set; } //to bedzie prywatne docelowo chyba
@@ -61,14 +63,7 @@ namespace Evaluator
                 Neighbors.Add(newNeighbor);
             }
         }
-        //na razie dodawanie poj. bloku tylko w CreateSubregions() wiec mzoe byc histogramem subRegionu hist bloku, ale jak
-        //hirarchical splitting to trzeba zmienic na dodawnie histogrmu do obecnego
-        //public void AddBlock(Rectangle block)
-        //{
-        //    Blocks.Add(block);
-        //    _subRegionHistogram = GetHistogramFrom(block);
-        //}
-
+        
         public void AddBlocks(List<Rectangle> blocks)
         {
             Blocks.AddRange(blocks);
@@ -77,41 +72,28 @@ namespace Evaluator
             {
                 Pixels += block.Width * block.Height;
             }
-
-            //nieoptymalnie
-            CalculateNormalizedHistogram(); //TODO add new histograms to existing or recalculate whole 
             
+            //nieoptymalnie
+            CalculateNormalizedHistogram(); //TODO add new histograms to existing or recalculate whole             
         }
-
-        //public int GetPixelCount()
-        //{
-        //    int count = 0;
-
-        //    foreach (var block in Blocks)
-        //    {
-        //        count += block.Width * block.Height;
-        //    }
-
-        //    return count;
-        //}
-
+        
         public double[] CalculateNormalizedHistogram()
         {
-            SubRegionHistogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            Histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
             
             foreach (var block in Blocks)
             {
                 var blockHistogram = GetHistogramFrom(block);
 
-                for (int i = 0; i < SubRegionHistogram.Length; i++)
+                for (int i = 0; i < Histogram.Length; i++)
                 {
-                    SubRegionHistogram[i] += blockHistogram[i];
+                    Histogram[i] += blockHistogram[i];
                 }
             }
 
-            NormalizeHistogram(SubRegionHistogram, Pixels);
+            NormalizeHistogram(Histogram, Pixels);
 
-            return SubRegionHistogram;
+            return Histogram;
         }
 
         public void SaveIDInArray(int[] IDs, int bmpWidth)

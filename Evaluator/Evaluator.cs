@@ -9,7 +9,6 @@ using System.IO;
 
 namespace Evaluator
 {
-
     public class Evaluator
     {
         private int _bytes;
@@ -17,48 +16,21 @@ namespace Evaluator
 
         private int[] _ID;
         private Bitmap _bmp;
-        double[] _histogram;
+
+        private int _subRegionIDCounter = 0;
 
         private List<Rectangle> _blocks; // do debugowania
         private List<SubRegion> _subRegions;
 
-
-        private IntPtr _ptr; //debug draw
-        private BitmapData _bmpData; //debug draw
-
         public void ProcessImages()
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic1.gif";
-
-            //debug
-            //ReadFileWithSaveOption(path);
-            //CreateSubRegions();
-            //MergeSubRegions();
-            //DrawPictureAndSave();
-            //debug
-
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray64.gif";
 
             ReadFile(path);
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
 
-            var MIRs = new List<string>();
-
-            Merge(MIRs);
-
-            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap.txt";
-
-            var sb = new StringBuilder();
-            foreach (var MIR in MIRs)
-            {
-                sb.Append(MIR + Environment.NewLine);
-            }           
-
-            File.WriteAllText(path1, sb.ToString().Replace('.',','));
-
-
+            Merge();
 
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
@@ -78,102 +50,122 @@ namespace Evaluator
 
             IntPtr ptr = bmpData.Scan0;
 
-            _bytes = _bmp.Width * _bmp.Height;            
-
+            _bytes = _bmp.Width * _bmp.Height;
             _greyValues = new byte[_bytes];
-            SubRegion.Init(_greyValues, _bmp.Width);
-
-            _ID =  Enumerable.Repeat(-1, _bytes).ToArray();
+            _ID = Enumerable.Repeat(-1, _bytes).ToArray();
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
+            SubRegion.Init(_greyValues, _bmp.Width);
+
             _bmp.UnlockBits(bmpData);
-        }
 
-        private void ReadFileWithSaveOption(string path)
-        {
-            _bmp = new Bitmap(path);
-
-            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
-            _bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                _bmp.PixelFormat);
-
-            //IntPtr ptr = bmpData.Scan0;
-            _ptr = _bmpData.Scan0;
-
-            _bytes = _bmp.Width * _bmp.Height;
-
-            _greyValues = new byte[_bytes];
-            _ID = new int[_bytes];
-
-            _histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
-
-            System.Runtime.InteropServices.Marshal.Copy(_ptr, _greyValues, 0, _bytes);
-
-            //_bmp.UnlockBits(bmpData);
-        }
-
-        private void DrawPictureAndSave()
-        {
-            System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, _ptr, _bytes);
-
-            // Unlock the bits.
-            _bmp.UnlockBits(_bmpData);
-
-            // Draw the modified image.
-            //e.Graphics.DrawImage(bmp, 0, 150);
-            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_grayDrawed.gif";
-
-            _bmp.Save(output);
-
-            System.Diagnostics.Process.Start(output);
+            _subRegionIDCounter = 0;
         }
 
         private void CreateSubRegions()
         {
-            _blocks = new List<Rectangle>();
             _subRegions = new List<SubRegion>();
 
             Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
 
-            int id = 0;
+            int subRegionID = 0;
 
-            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Consts.minimumBlockSize)
+            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Consts.SMax)
             {
-                for (int j = mainBlock.X; j <= mainBlock.Width; j += Consts.minimumBlockSize)
+                for (int j = mainBlock.X; j <= mainBlock.Width; j += Consts.SMax)
                 {
-                    int newBlockWidth = Consts.minimumBlockSize;
-                    int newBlockHeight = Consts.minimumBlockSize;
+                    int newBlockWidth = Consts.SMax;
+                    int newBlockHeight = Consts.SMax;
 
-                    if (j + Consts.minimumBlockSize > mainBlock.Width)
+                    if (j + Consts.SMax > mainBlock.Width)
                     {
                         newBlockWidth = mainBlock.Width - j;
                     }
 
-                    if (i + Consts.minimumBlockSize > mainBlock.Height)
+                    if (i + Consts.SMax > mainBlock.Height)
                     {
                         newBlockHeight = mainBlock.Height - i;
                     }
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
-                    var newSubRegion = new SubRegion(newBlock);                    
-                    newSubRegion.ID = id++;
-                    
 
-                    _subRegions.Add(newSubRegion);
+                    //split block into 4   
+                    SplitHierarchically(newBlock);
+                                       
                 }
             }
 
-            SetSubRegionsNeighbors();         
+            SetSubRegionsNeighbors();
         }
 
+        private void SplitHierarchically(Rectangle block)
+        {
+            if (block.Width / 2 < Consts.SMin 
+                || block.Height / 2 < Consts.SMin) 
+                //|| (block.Width / 2) % 2 != 0
+                //|| (block.Height / 2) % 2 != 0) //is even
+            {
+                var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
+                _subRegions.Add(newSubRegion);
+                return;
+            }           
+
+            var newBlockWidth = block.Width / 2;
+            var newBlockHeight = block.Height / 2;
+
+            var blockCenterX = block.X + newBlockWidth;
+            var blockCenterY = block.Y + newBlockHeight;
+            
+            var newBlockA = new Rectangle(block.X, block.Y, newBlockWidth, newBlockHeight);
+            var newBlockB = new Rectangle(block.X, blockCenterY , newBlockWidth, newBlockHeight);
+            var newBlockC = new Rectangle(blockCenterX, block.Y, newBlockWidth, newBlockHeight);
+            var newBlockD = new Rectangle(blockCenterX, blockCenterY, newBlockWidth, newBlockHeight);
+
+            var histA = GetHistogramFrom(newBlockA);
+            var histB = GetHistogramFrom(newBlockB);
+            var histC = GetHistogramFrom(newBlockC);
+            var histD = GetHistogramFrom(newBlockD);
+
+            var MSEs = new List<double>();
+
+            MSEs.Add(CalculateMSE(histA, histB));
+            MSEs.Add(CalculateMSE(histA, histC));
+            MSEs.Add(CalculateMSE(histA, histD));
+            MSEs.Add(CalculateMSE(histB, histC));
+            MSEs.Add(CalculateMSE(histB, histD));
+            MSEs.Add(CalculateMSE(histC, histD));
+
+            var maxMSE = MSEs.Max();
+            var minMSE = MSEs.Min();
+
+            var R = maxMSE / minMSE;
+            
+            //string appendText = R.ToString().Replace('.', ',') + Environment.NewLine;
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\Rvalues.txt";
+            //File.AppendAllText(path, appendText);
+
+            if (R > Consts.X)
+            {
+                SplitHierarchically(newBlockA);
+                SplitHierarchically(newBlockB);
+                SplitHierarchically(newBlockC);
+                SplitHierarchically(newBlockD);
+            }
+            else
+            {
+                var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
+                _subRegions.Add(newSubRegion);
+            }            
+        }
+        
         private void SetSubRegionsNeighbors()
         {
             foreach (var region in _subRegions)
             {
                 var block = region.Blocks.FirstOrDefault();
                 //create block enlarged by 1 in each direction
-                var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.minimumBlockSize + 2, Consts.minimumBlockSize + 2);
+                var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.SMin + 2, Consts.SMin + 2);
 
                 var regionNeighbors = _subRegions
                     .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
@@ -183,23 +175,25 @@ namespace Evaluator
             }
         }
 
-        private void Merge(List<string> MIRs)
+        private void Merge()
         {
+            var MIRs = new List<string>();
+
             double MImax = double.MinValue;
             double MIcur;
             double MIR = double.MinValue;
 
             var mergers = CreateMergeList();
-            CalculateMIsFor(mergers);            
+            CalculateMIsFor(mergers);
 
             int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
-            int k = 0; // debug
+            Merge smallestMIMerge;
 
-            var smallestMIMerge = mergers.FirstOrDefault();
-            
-            while (oneTenthOfAllPossibleMergers-- > -600 /*|| MIR < Consts.Y*/)
+            while (oneTenthOfAllPossibleMergers-- > -10 /*|| MIR < Consts.Y*/)
             {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
+
+                smallestMIMerge = mergers.FirstOrDefault();
 
                 foreach (var merge in mergers)
                 {
@@ -214,26 +208,24 @@ namespace Evaluator
                 }
 
                 var pairToMarge = smallestMIMerge;
-                MIcur = pairToMarge.MI;  
+                MIcur = pairToMarge.MI;
                 MIR = MIcur / MImax;
 
-                var newMergePairs = MergePair(pairToMarge);
+                var newMergePairs = MergePair(pairToMarge); //tutaj licza sie na nowo histogramy z uwzgl nowych blokow
 
                 RemoveOldMergers(mergers, pairToMarge);
-                smallestMIMerge.MI = double.MaxValue;
+                //smallestMIMerge.MI = double.MaxValue;
 
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                CalculateMIsFor(newMergePairs); 
-                watch.Stop();
-                var elapsedMs = watch.ElapsedMilliseconds;
+                CalculateMIsFor(newMergePairs); //tutaj odwoje sie do tych policzonych juz
 
                 mergers.AddRange(newMergePairs);
 
-                //debug
-                //SaveIDsInArray();
-                //SaveIDArrayInFile(k++);
+                SaveIDsInArray();
+
                 MIRs.Add(MIR.ToString());
             }
+
+            SaveMIRsInFile(MIRs);
         }
 
         private List<Merge> MergePair(Merge pair)
@@ -249,9 +241,9 @@ namespace Evaluator
                 neighbor.AddNeighbor(subRegionToRemain);
                 subRegionToRemain.AddNeighbor(neighbor);
             }
-            
-            subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);                
-            
+
+            subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);
+
             _subRegions[subRegionToDelete.ID] = null; //po usunietym subregionie zostaje null
 
             var newMergePairs = new List<Merge>();
@@ -261,7 +253,7 @@ namespace Evaluator
                 {
                     SubRegion1ID = subRegionToRemain.ID,
                     SubRegion2ID = neighbor.ID,
-                    MI = double.MaxValue
+                    //MI = double.MaxValue
                 });
             }
 
@@ -292,12 +284,12 @@ namespace Evaluator
 
                     var mergePair = new Merge()
                     {
-                        SubRegion1ID = _subRegions[i].ID ,
+                        SubRegion1ID = _subRegions[i].ID,
                         SubRegion2ID = neighborID,
                         MI = double.MaxValue
                     };
-                    
-                    mergers.Add(mergePair);                    
+
+                    mergers.Add(mergePair);
                 }
             }
 
@@ -310,17 +302,17 @@ namespace Evaluator
             {
                 var subRegion1 = _subRegions[merge.SubRegion1ID];
                 var subRegion2 = _subRegions[merge.SubRegion2ID];
-                                       
+
                 int pixels1 = subRegion1.Pixels;
                 int pixels2 = subRegion2.Pixels;
-                
+
                 int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
-                                
-                var sr1h = subRegion1.SubRegionHistogram;
-                var sr2h = subRegion2.SubRegionHistogram;
-                               
+
+                var sr1h = subRegion1.Histogram;
+                var sr2h = subRegion2.Histogram;
+
                 double MSE = CalculateMSE(sr1h, sr2h);
-                
+
                 var MI = p * MSE;
                 merge.MI = MI;
             }
@@ -362,23 +354,36 @@ namespace Evaluator
             }
         }
 
-        private void SaveIDArrayInFile(int k)
+        private void SaveMIRsInFile(List<string> MIRs)
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap" + k.ToString() +".txt";
+            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap.txt";
 
             var sb = new StringBuilder();
-            for (int i = 0; i < _ID.Length; i++)
+            foreach (var MIR in MIRs)
             {
-                var id = _ID[i].ToString("X");                
-                sb.Append(id);
-                if ((i + 1)%_bmp.Width == 0 && i !=0)
+                sb.Append(MIR + Environment.NewLine);
+            }
+
+            File.WriteAllText(path1, sb.ToString().Replace('.', ','));
+        }
+
+        private double[] GetHistogramFrom(Rectangle block)
+        {
+            var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+
+            for (int i = block.Y; i < block.Y + block.Height; i++)
+            {
+                for (int j = block.X; j < block.X + block.Width; j++)
                 {
-                    sb.Append(Environment.NewLine);
+                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmp.Width, _bmp.Width * i + j);
+                    int b = HelperMethods.GetBinFor(LBPC.C);
+
+                    histogram[(LBPC.LBP) * Consts.Bins + b]++;
                 }
             }
-            
-            File.WriteAllText(path, sb.ToString());
+
+            return histogram;
         }
-        
+
     }
 }
