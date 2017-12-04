@@ -24,11 +24,13 @@ namespace Evaluator
         
         public const int SMin = 16;
        
-        public const int SMax = 4*SMin;
-
+        public const int SMax = /*4**/SMin;
+        
         public const double Y = 2.0;
 
-        public const double X = 1.2;
+        public const double X = 3.5;
+
+        public const int ForceStop = -500;
     }
 
 }

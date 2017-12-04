@@ -24,7 +24,8 @@ namespace Evaluator
 
         public void ProcessImages()
         {
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
             ReadFile(path);
             CreateSubRegions();
@@ -167,12 +168,19 @@ namespace Evaluator
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
 
                     //split block into 4   
-                    SplitHierarchically(newBlock);
+                    //SplitHierarchically(newBlock);
+                    SplitAll(newBlock);
                                        
                 }
             }
 
             SetSubRegionsNeighbors();
+        }
+
+        private void SplitAll(Rectangle block)
+        {
+            var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
+            _subRegions.Add(newSubRegion);
         }
 
         private void SplitHierarchically(Rectangle block)
@@ -265,7 +273,7 @@ namespace Evaluator
             int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
             Merge smallestMIMerge;
 
-            while (oneTenthOfAllPossibleMergers-- > -83 /*|| MIR < Consts.Y*/)
+            while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
             {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
 
