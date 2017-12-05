@@ -24,10 +24,37 @@ namespace Evaluator
 
         public void ProcessImages()
         {
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray512.gif";
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic1.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray516.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
             ReadFile(path);
+
+            //int widthHeight = 12;
+
+            //Rectangle block1 = new Rectangle(60, 21, widthHeight, widthHeight);
+            //SubRegion region1 = new SubRegion(block1, 0);
+
+            //region1.SaveIDInArray(_ID,_bmp.Width);
+
+            //SaveHistogramInFile(region1.Histogram);
+
+            //Rectangle block2 = new Rectangle(20, 21, widthHeight, widthHeight);
+            //SubRegion region2 = new SubRegion(block2, 1);
+
+            //region2.SaveIDInArray(_ID, _bmp.Width);
+
+            //SaveHistogramInFile(region2.Histogram);
+
+            //Rectangle block3 = new Rectangle(40, 21, widthHeight, widthHeight);
+            //SubRegion region3 = new SubRegion(block3, 0);
+
+            //region3.SaveIDInArray(_ID, _bmp.Width);
+
+            //SaveHistogramInFile(region3.Histogram);
+
+
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
             SaveIDsInArray();
@@ -138,8 +165,7 @@ namespace Evaluator
                 }
             }            
         }
-
-
+        
         private void CreateSubRegions()
         {
             _subRegions = new List<SubRegion>();
@@ -166,8 +192,7 @@ namespace Evaluator
                     }
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
-
-                    //split block into 4   
+                                        
                     //SplitHierarchically(newBlock);
                     SplitAll(newBlock);
                                        
@@ -270,11 +295,13 @@ namespace Evaluator
             var mergers = CreateMergeList();
             CalculateMIsFor(mergers);
 
-            int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
+            //int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
+            int oneTenthOfAllPossibleMergers = 0;
             Merge smallestMIMerge;
-
+                        
             while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
-            {
+                //while (MIR < Consts.Y)
+                {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
 
                 smallestMIMerge = mergers.FirstOrDefault();
@@ -337,7 +364,7 @@ namespace Evaluator
                 {
                     SubRegion1ID = subRegionToRemain.ID,
                     SubRegion2ID = neighbor.ID,
-                    //MI = double.MaxValue
+                    MI = double.MaxValue
                 });
             }
 
@@ -414,16 +441,16 @@ namespace Evaluator
             return sum / histogram1.Length;
         }
 
-        private void SaveResults(double[] results)
+        private void SaveHistogramInFile(double[] results)
         {
             string[] positions = new string[results.Length];
 
             for (int i = 0; i < results.Length; i++)
             {
-                positions[i] = i + " " + results[i];
+                positions[i] = /*i + " " +*/ results[i].ToString().Replace('.', ',');
             }
 
-            System.IO.File.WriteAllLines(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\results.txt", positions);
+            System.IO.File.WriteAllLines(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\histogram.txt", positions);
         }
 
         private void SaveIDsInArray()
@@ -440,7 +467,7 @@ namespace Evaluator
 
         private void SaveMIRsInFile(List<string> MIRs)
         {
-            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\IDmap.txt";
+            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\MIRs.txt";
 
             var sb = new StringBuilder();
             foreach (var MIR in MIRs)

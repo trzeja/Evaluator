@@ -24,13 +24,13 @@ namespace Evaluator
         
         public const int SMin = 16;
        
-        public const int SMax = /*4**/SMin;
+        public const int SMax = SMin;
         
-        public const double Y = 2.0;
+        public const double Y = 0.04; //0.02 dla leny 516
 
-        public const double X = 3.5;
+        public const double X = 2.5;
 
-        public const int ForceStop = -500;
+        public const int ForceStop = -1520; //1115 to koniec dla lake //1521 koniec dla mosaic1
     }
 
 }

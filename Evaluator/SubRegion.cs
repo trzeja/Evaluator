@@ -22,8 +22,11 @@ namespace Evaluator
             Neighbors = new List<SubRegion>();
 
             Blocks.Add(block);
-            Histogram = GetHistogramFrom(block);
             Pixels = block.Width * block.Height;
+
+            Histogram = GetHistogramFrom(block);
+            
+            NormalizeHistogram(Histogram, Pixels); //TEGO NIE BYLO!!!
         }
                 
         public double[] Histogram { get; private set; }
