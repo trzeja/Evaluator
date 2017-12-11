@@ -35,11 +35,11 @@ namespace Evaluator
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
             SaveIDsInArray();
-            DrawBoundariesInFile(path);
+            //DrawBoundariesInFile(path);
 
 
             Merge();
-            DrawBoundariesInFile(path);
+            //DrawBoundariesInFile(path);
 
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
@@ -53,13 +53,23 @@ namespace Evaluator
         {
             _bmp = new Bitmap(path);
 
+            int pixelsToTrim = _bmp.Width % 4;
+
+            if (pixelsToTrim != 0)
+            {
+                var croppedBmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
+                _bmp.Dispose();
+                _bmp = croppedBmp;
+            }          
+
+
             Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
             BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
                 _bmp.PixelFormat);
 
             IntPtr ptr = bmpData.Scan0;
 
-            int pixelsToTrim = _bmp.Width % 4;
+            
 
 
             //bmpData.Stride
@@ -70,18 +80,48 @@ namespace Evaluator
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
-
-
-
-
-
-
-
             SubRegion.Init(_greyValues, _bmp.Width);
 
             _bmp.UnlockBits(bmpData);
 
             _subRegionIDCounter = 0;
+        }
+
+        public void CropImage(int x, int y, int width, int height)
+
+{
+    string imagePath = @"C:\Users\Admin\Desktop\test.jpg";
+    Bitmap croppedImage;
+
+    // Here we capture the resource - image file.
+    using (var originalImage = new Bitmap(imagePath))
+    {
+        Rectangle crop = new Rectangle(x, y, width, height);
+
+        // Here we capture another resource.
+        croppedImage = originalImage.Clone(crop, originalImage.PixelFormat);
+
+    } // Here we release the original resource - bitmap in memory and file on disk.
+
+    // At this point the file on disk already free - you can record to the same path.
+    croppedImage.Save(imagePath, ImageFormat.Jpeg);
+
+    // It is desirable release this resource too.
+    croppedImage.Dispose();
+}
+
+        public Bitmap CropImage(Bitmap source, Rectangle section)
+        {
+            // An empty bitmap which will hold the cropped image
+            Bitmap bmp = new Bitmap(section.Width, section.Height);
+
+            Graphics g = Graphics.FromImage(bmp);
+
+            // Draw the given area (section) of the source image
+            // at location 0,0 on the empty bitmap (bmp)
+            g.DrawImage(source, 0, 0, section, GraphicsUnit.Pixel);
+
+            return bmp;
         }
 
         private void DrawBoundariesInFile(string path)
@@ -231,7 +271,7 @@ namespace Evaluator
             //while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
                 while (MIR < Consts.Y)
                 {
-                Console.WriteLine(oneTenthOfAllPossibleMergers);
+                Console.WriteLine(oneTenthOfAllPossibleMergers++);
 
                 smallestMIMerge = mergers.FirstOrDefault();
 
