@@ -25,35 +25,12 @@ namespace Evaluator
         public void ProcessImages()
         {
             //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic1.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray516.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic3.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
             //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
             ReadFile(path);
-
-            //int widthHeight = 12;
-
-            //Rectangle block1 = new Rectangle(60, 21, widthHeight, widthHeight);
-            //SubRegion region1 = new SubRegion(block1, 0);
-
-            //region1.SaveIDInArray(_ID,_bmp.Width);
-
-            //SaveHistogramInFile(region1.Histogram);
-
-            //Rectangle block2 = new Rectangle(20, 21, widthHeight, widthHeight);
-            //SubRegion region2 = new SubRegion(block2, 1);
-
-            //region2.SaveIDInArray(_ID, _bmp.Width);
-
-            //SaveHistogramInFile(region2.Histogram);
-
-            //Rectangle block3 = new Rectangle(40, 21, widthHeight, widthHeight);
-            //SubRegion region3 = new SubRegion(block3, 0);
-
-            //region3.SaveIDInArray(_ID, _bmp.Width);
-
-            //SaveHistogramInFile(region3.Histogram);
-
+            
 
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
@@ -82,11 +59,23 @@ namespace Evaluator
 
             IntPtr ptr = bmpData.Scan0;
 
+            int pixelsToTrim = _bmp.Width % 4;
+
+
+            //bmpData.Stride
+
             _bytes = _bmp.Width * _bmp.Height;
             _greyValues = new byte[_bytes];
             _ID = Enumerable.Repeat(-1, _bytes).ToArray();
 
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
+
+
+
+
+
+
+
 
             SubRegion.Init(_greyValues, _bmp.Width);
 
@@ -207,66 +196,6 @@ namespace Evaluator
             var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
             _subRegions.Add(newSubRegion);
         }
-
-        private void SplitHierarchically(Rectangle block)
-        {
-            if (block.Width / 2 < Consts.SMin 
-                || block.Height / 2 < Consts.SMin) 
-                //|| (block.Width / 2) % 2 != 0
-                //|| (block.Height / 2) % 2 != 0) //is even
-            {
-                var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
-                _subRegions.Add(newSubRegion);
-                return;
-            }           
-
-            var newBlockWidth = block.Width / 2;
-            var newBlockHeight = block.Height / 2;
-
-            var blockCenterX = block.X + newBlockWidth;
-            var blockCenterY = block.Y + newBlockHeight;
-            
-            var newBlockA = new Rectangle(block.X, block.Y, newBlockWidth, newBlockHeight);
-            var newBlockB = new Rectangle(block.X, blockCenterY , newBlockWidth, newBlockHeight);
-            var newBlockC = new Rectangle(blockCenterX, block.Y, newBlockWidth, newBlockHeight);
-            var newBlockD = new Rectangle(blockCenterX, blockCenterY, newBlockWidth, newBlockHeight);
-
-            var histA = GetHistogramFrom(newBlockA);
-            var histB = GetHistogramFrom(newBlockB);
-            var histC = GetHistogramFrom(newBlockC);
-            var histD = GetHistogramFrom(newBlockD);
-
-            var MSEs = new List<double>();
-
-            MSEs.Add(CalculateMSE(histA, histB));
-            MSEs.Add(CalculateMSE(histA, histC));
-            MSEs.Add(CalculateMSE(histA, histD));
-            MSEs.Add(CalculateMSE(histB, histC));
-            MSEs.Add(CalculateMSE(histB, histD));
-            MSEs.Add(CalculateMSE(histC, histD));
-
-            var maxMSE = MSEs.Max();
-            var minMSE = MSEs.Min();
-
-            var R = maxMSE / minMSE;
-            
-            //string appendText = R.ToString().Replace('.', ',') + Environment.NewLine;
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\Rvalues.txt";
-            //File.AppendAllText(path, appendText);
-
-            if (R > Consts.X)
-            {
-                SplitHierarchically(newBlockA);
-                SplitHierarchically(newBlockB);
-                SplitHierarchically(newBlockC);
-                SplitHierarchically(newBlockD);
-            }
-            else
-            {
-                var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
-                _subRegions.Add(newSubRegion);
-            }            
-        }
         
         private void SetSubRegionsNeighbors()
         {
@@ -299,8 +228,8 @@ namespace Evaluator
             int oneTenthOfAllPossibleMergers = 0;
             Merge smallestMIMerge;
                         
-            while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
-                //while (MIR < Consts.Y)
+            //while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
+                while (MIR < Consts.Y)
                 {
                 Console.WriteLine(oneTenthOfAllPossibleMergers);
 
