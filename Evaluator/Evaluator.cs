@@ -30,16 +30,16 @@ namespace Evaluator
             //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
             ReadFile(path);
-            
+
 
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
             SaveIDsInArray();
-            //DrawBoundariesInFile(path);
+            DrawBoundariesInFile(path);
 
 
             Merge();
-            //DrawBoundariesInFile(path);
+            DrawBoundariesInFile(path);
 
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
@@ -60,7 +60,7 @@ namespace Evaluator
                 var croppedBmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
                 _bmp.Dispose();
                 _bmp = croppedBmp;
-            }          
+            }
 
 
             Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
@@ -69,7 +69,7 @@ namespace Evaluator
 
             IntPtr ptr = bmpData.Scan0;
 
-            
+
 
 
             //bmpData.Stride
@@ -86,47 +86,20 @@ namespace Evaluator
 
             _subRegionIDCounter = 0;
         }
-
-        public void CropImage(int x, int y, int width, int height)
-
-{
-    string imagePath = @"C:\Users\Admin\Desktop\test.jpg";
-    Bitmap croppedImage;
-
-    // Here we capture the resource - image file.
-    using (var originalImage = new Bitmap(imagePath))
-    {
-        Rectangle crop = new Rectangle(x, y, width, height);
-
-        // Here we capture another resource.
-        croppedImage = originalImage.Clone(crop, originalImage.PixelFormat);
-
-    } // Here we release the original resource - bitmap in memory and file on disk.
-
-    // At this point the file on disk already free - you can record to the same path.
-    croppedImage.Save(imagePath, ImageFormat.Jpeg);
-
-    // It is desirable release this resource too.
-    croppedImage.Dispose();
-}
-
-        public Bitmap CropImage(Bitmap source, Rectangle section)
-        {
-            // An empty bitmap which will hold the cropped image
-            Bitmap bmp = new Bitmap(section.Width, section.Height);
-
-            Graphics g = Graphics.FromImage(bmp);
-
-            // Draw the given area (section) of the source image
-            // at location 0,0 on the empty bitmap (bmp)
-            g.DrawImage(source, 0, 0, section, GraphicsUnit.Pixel);
-
-            return bmp;
-        }
+                
 
         private void DrawBoundariesInFile(string path)
         {
             _bmp = new Bitmap(path);
+
+            int pixelsToTrim = _bmp.Width % 4;
+
+            if (pixelsToTrim != 0)
+            {
+                var croppedBmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
+                _bmp.Dispose();
+                _bmp = croppedBmp;
+            }
 
             Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
             BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
@@ -141,25 +114,25 @@ namespace Evaluator
             System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
 
             //SubRegion.Init(_greyValues, _bmp.Width);
-                      
+
             Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
 
-            for (int i = mainBlock.Y; i < mainBlock.Height; i ++)
+            for (int i = mainBlock.Y; i < mainBlock.Height; i++)
             {
-                for (int j = mainBlock.X; j < mainBlock.Width; j ++)
-                {                    
+                for (int j = mainBlock.X; j < mainBlock.Width; j++)
+                {
                     ChangePixelToWhiteIfFrontier(_bmp.Width * i + j); //spr czy bmp.width dobre
                 }
             }
-                        
+
             System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, ptr, _bytes);
-            
+
             _bmp.UnlockBits(bmpData);
-            
+
             string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_grayDrawed.gif";
-            
+
             _bmp.Save(output);
-            
+
             System.Diagnostics.Process.Start(output);
         }
 
@@ -192,9 +165,9 @@ namespace Evaluator
                 {
                     _greyValues[pixelIdx] = 0;
                 }
-            }            
+            }
         }
-        
+
         private void CreateSubRegions()
         {
             _subRegions = new List<SubRegion>();
@@ -221,10 +194,10 @@ namespace Evaluator
                     }
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
-                                        
+
                     //SplitHierarchically(newBlock);
                     SplitAll(newBlock);
-                                       
+
                 }
             }
 
@@ -236,7 +209,7 @@ namespace Evaluator
             var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
             _subRegions.Add(newSubRegion);
         }
-        
+
         private void SetSubRegionsNeighbors()
         {
             foreach (var region in _subRegions)
@@ -267,10 +240,10 @@ namespace Evaluator
             //int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
             int oneTenthOfAllPossibleMergers = 0;
             Merge smallestMIMerge;
-                        
+
             //while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
-                while (MIR < Consts.Y)
-                {
+            while (MIR < Consts.Y)
+            {
                 Console.WriteLine(oneTenthOfAllPossibleMergers++);
 
                 smallestMIMerge = mergers.FirstOrDefault();
