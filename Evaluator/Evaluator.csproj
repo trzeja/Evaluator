@@ -45,7 +45,6 @@
   <ItemGroup>
     <Compile Include="Consts.cs" />
     <Compile Include="Evaluator.cs" />
-    <Compile Include="HelperMethods.cs" />
     <Compile Include="LBPC.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

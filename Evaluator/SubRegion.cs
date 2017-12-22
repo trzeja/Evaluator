@@ -115,8 +115,8 @@ namespace Evaluator
             {
                 for (int j = block.X; j < block.X + block.Width; j++)
                 {
-                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmpWidth, _bmpWidth * i + j);
-                    int b = HelperMethods.GetBinFor(LBPC.C);
+                    var LBPC = CountLBPC(_greyValues, _bmpWidth, _bmpWidth * i + j);
+                    int b = GetBinFor(LBPC.C);
 
                     histogram[(LBPC.LBP) * Consts.Bins + b]++;
                 }
@@ -144,6 +144,69 @@ namespace Evaluator
                     IDs[bmpWidth * i + j] = ID;
                 }
             }
+        }
+
+        private int GetBinFor(double c)
+        {
+            c += Consts.MaxC; // move to <0,MaxC*2> range from <-MaxC,MaxC>             
+            int bin = (int)Math.Floor(c / Consts.BinSize);
+
+            return bin;
+        }
+
+        private LBPC CountLBPC(byte[] greyValues, int width, int pixelIdx)
+        {
+            byte LBP = 0;
+            double C = 0;
+
+            int biggerOrEqualNeighborsSum = 0;
+            int biggerOrEqualNeighborsCount = 0;
+            int smallerNeighborsSum = 0;
+            int smallerNeighborsCount = 0;
+
+            var NeighboursIndexes = new List<int>
+            {
+                pixelIdx - width - 1,
+                pixelIdx - width,
+                pixelIdx - width + 1,
+                pixelIdx + 1,
+                pixelIdx - 1,
+                pixelIdx + width - 1,
+                pixelIdx + width,
+                pixelIdx + width + 1
+            };
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (greyValues[pixelIdx] <= greyValues[NeighboursIndexes[i]])
+                {
+                    LBP += (byte)Math.Pow(2, i);
+
+                    biggerOrEqualNeighborsSum += greyValues[NeighboursIndexes[i]];
+                    biggerOrEqualNeighborsCount++;
+                }
+                else
+                {
+                    smallerNeighborsSum += greyValues[NeighboursIndexes[i]];
+                }
+            }
+            
+            smallerNeighborsCount = Consts.Neighbors - biggerOrEqualNeighborsCount;
+
+            if (smallerNeighborsCount == 0)
+            {
+                C = biggerOrEqualNeighborsSum / biggerOrEqualNeighborsCount;
+            }
+            else if (biggerOrEqualNeighborsCount == 0)
+            {
+                C = smallerNeighborsSum / smallerNeighborsCount;
+            }
+            else
+            {
+                C = (biggerOrEqualNeighborsSum / biggerOrEqualNeighborsCount) - (smallerNeighborsSum / smallerNeighborsCount);
+            }
+
+            return new LBPC { LBP = LBP, C = C };
         }
     }
 }

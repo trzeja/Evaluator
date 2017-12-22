@@ -11,32 +11,27 @@ namespace Evaluator
 {
     public class Evaluator
     {
-        private int _bytes;
         private byte[] _greyValues;
 
         private int[] _ID;
         private Bitmap _bmp;
 
-        private int _subRegionIDCounter = 0;
-
-        private List<Rectangle> _blocks; // do debugowania
         private List<SubRegion> _subRegions;
+        private int _subRegionsNumber;
 
         public void ProcessImages()
         {
             //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
             //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic3.gif";
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
+            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
+            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
             ReadFile(path);
-
 
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
             SaveIDsInArray();
             DrawBoundariesInFile(path);
-
 
             Merge();
             DrawBoundariesInFile(path);
@@ -54,51 +49,36 @@ namespace Evaluator
             _bmp = new Bitmap(path);
 
             int pixelsToTrim = _bmp.Width % 4;
-
             if (pixelsToTrim != 0)
             {
-                var croppedBmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
-                _bmp.Dispose();
-                _bmp = croppedBmp;
+                _bmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);                
             }
-
 
             Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
             BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
                 _bmp.PixelFormat);
 
-            IntPtr ptr = bmpData.Scan0;
+            IntPtr ptr = bmpData.Scan0;                        
 
+            var bytes = _bmp.Width * _bmp.Height;
+            _greyValues = new byte[bytes];
+            _ID = Enumerable.Repeat(-1, bytes).ToArray();
 
-
-
-            //bmpData.Stride
-
-            _bytes = _bmp.Width * _bmp.Height;
-            _greyValues = new byte[_bytes];
-            _ID = Enumerable.Repeat(-1, _bytes).ToArray();
-
-            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
+            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, bytes);
 
             SubRegion.Init(_greyValues, _bmp.Width);
 
             _bmp.UnlockBits(bmpData);
-
-            _subRegionIDCounter = 0;
         }
-                
-
+        
         private void DrawBoundariesInFile(string path)
         {
             _bmp = new Bitmap(path);
 
             int pixelsToTrim = _bmp.Width % 4;
-
             if (pixelsToTrim != 0)
             {
-                var croppedBmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
-                _bmp.Dispose();
-                _bmp = croppedBmp;
+                _bmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
             }
 
             Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
@@ -107,13 +87,10 @@ namespace Evaluator
 
             IntPtr ptr = bmpData.Scan0;
 
-            _bytes = _bmp.Width * _bmp.Height;
-            _greyValues = new byte[_bytes];
-            //_ID = Enumerable.Repeat(-1, _bytes).ToArray();
+            var bytes = _bmp.Width * _bmp.Height;
+            _greyValues = new byte[bytes];
 
-            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, _bytes);
-
-            //SubRegion.Init(_greyValues, _bmp.Width);
+            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, bytes);
 
             Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
 
@@ -121,11 +98,11 @@ namespace Evaluator
             {
                 for (int j = mainBlock.X; j < mainBlock.Width; j++)
                 {
-                    ChangePixelToWhiteIfFrontier(_bmp.Width * i + j); //spr czy bmp.width dobre
+                    ChangePixelColorIfFrontier(_bmp.Width * i + j); //spr czy bmp.width dobre
                 }
             }
 
-            System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, ptr, _bytes);
+            System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, ptr, bytes);
 
             _bmp.UnlockBits(bmpData);
 
@@ -136,28 +113,37 @@ namespace Evaluator
             System.Diagnostics.Process.Start(output);
         }
 
-        private void ChangePixelToWhiteIfFrontier(int pixelIdx)
+        private void ChangePixelColorIfFrontier(int pixelIdx)
         {
+            #region NeighborsIndexes
+
             var neighborsIndexes = new List<int>();
 
             int northWestNeighborIdx = pixelIdx - _bmp.Width - 1;
             neighborsIndexes.Add(northWestNeighborIdx);
+
             int northNeighborIdx = pixelIdx - _bmp.Width;
             neighborsIndexes.Add(northNeighborIdx);
+
             int northEastNeighborIdx = pixelIdx - _bmp.Width + 1;
             neighborsIndexes.Add(northEastNeighborIdx);
 
             int eastNeighborIdx = pixelIdx + 1;
             neighborsIndexes.Add(eastNeighborIdx);
+
             int westNeighborIdx = pixelIdx - 1;
             neighborsIndexes.Add(westNeighborIdx);
 
             int southWestNeighborIdx = pixelIdx + _bmp.Width - 1;
             neighborsIndexes.Add(southWestNeighborIdx);
+
             int southNeighborIdx = pixelIdx + _bmp.Width;
             neighborsIndexes.Add(southNeighborIdx);
+
             int southEastNeighborIdx = pixelIdx + _bmp.Width + 1;
             neighborsIndexes.Add(southEastNeighborIdx);
+
+            #endregion
 
             foreach (var neighborIdx in neighborsIndexes)
             {
@@ -195,19 +181,13 @@ namespace Evaluator
 
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
 
-                    //SplitHierarchically(newBlock);
-                    SplitAll(newBlock);
-
+                    var newSubRegion = new SubRegion(newBlock, subRegionID++);
+                    _subRegions.Add(newSubRegion);
+                    _subRegionsNumber++;
                 }
             }
 
             SetSubRegionsNeighbors();
-        }
-
-        private void SplitAll(Rectangle block)
-        {
-            var newSubRegion = new SubRegion(block, _subRegionIDCounter++);
-            _subRegions.Add(newSubRegion);
         }
 
         private void SetSubRegionsNeighbors()
@@ -237,15 +217,12 @@ namespace Evaluator
             var mergers = CreateMergeList();
             CalculateMIsFor(mergers);
 
-            //int oneTenthOfAllPossibleMergers = mergers.Count() / 10;
-            int oneTenthOfAllPossibleMergers = 0;
             Merge smallestMIMerge;
 
-            //while (oneTenthOfAllPossibleMergers-- > Consts.ForceStop /*|| MIR < Consts.Y*/)
-            while (MIR < Consts.Y)
+            while (_subRegionsNumber > Consts.RegionsToRemain && MIR < Consts.Y)
             {
-                Console.WriteLine(oneTenthOfAllPossibleMergers++);
-
+                Console.WriteLine(_subRegionsNumber); //TO DEL
+                
                 smallestMIMerge = mergers.FirstOrDefault();
 
                 foreach (var merge in mergers)
@@ -264,18 +241,17 @@ namespace Evaluator
                 MIcur = pairToMarge.MI;
                 MIR = MIcur / MImax;
 
-                var newMergePairs = MergePair(pairToMarge); //tutaj licza sie na nowo histogramy z uwzgl nowych blokow
+                var newMergePairs = MergePair(pairToMarge); 
 
                 RemoveOldMergers(mergers, pairToMarge);
-                //smallestMIMerge.MI = double.MaxValue;
 
-                CalculateMIsFor(newMergePairs); //tutaj odwoje sie do tych policzonych juz
+                CalculateMIsFor(newMergePairs); 
 
                 mergers.AddRange(newMergePairs);
 
                 SaveIDsInArray();
 
-                MIRs.Add(MIR.ToString());
+                MIRs.Add(MIR.ToString()); //TO DEL 
             }
 
             SaveMIRsInFile(MIRs);
@@ -297,7 +273,8 @@ namespace Evaluator
 
             subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);
 
-            _subRegions[subRegionToDelete.ID] = null; //po usunietym subregionie zostaje null
+            _subRegions[subRegionToDelete.ID] = null;
+            _subRegionsNumber--;
 
             var newMergePairs = new List<Merge>();
             foreach (var neighbor in subRegionToRemain.Neighbors)
@@ -332,7 +309,7 @@ namespace Evaluator
                 {
                     if (neighborID < i)
                     {
-                        continue; //not adding pair with ID of already processed subRegion
+                        continue; // not adding pair with ID of already processed subRegion
                     }
 
                     var mergePair = new Merge()
@@ -359,7 +336,7 @@ namespace Evaluator
                 int pixels1 = subRegion1.Pixels;
                 int pixels2 = subRegion2.Pixels;
 
-                int p = pixels1 > pixels2 ? pixels2 : pixels1; //p is number of pixels in smaller subregion
+                int p = pixels1 > pixels2 ? pixels2 : pixels1; // p is the number of pixels in smaller subregion
 
                 var sr1h = subRegion1.Histogram;
                 var sr2h = subRegion2.Histogram;
@@ -383,7 +360,7 @@ namespace Evaluator
             return sum / histogram1.Length;
         }
 
-        private void SaveHistogramInFile(double[] results)
+        private void SaveHistogramInFile(double[] results) // TO DEL
         {
             string[] positions = new string[results.Length];
 
@@ -403,11 +380,12 @@ namespace Evaluator
                 {
                     continue;
                 }
+
                 region.SaveIDInArray(_ID, _bmp.Width);
             }
         }
 
-        private void SaveMIRsInFile(List<string> MIRs)
+        private void SaveMIRsInFile(List<string> MIRs) // TO DEL
         {
             string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\MIRs.txt";
 
@@ -418,25 +396,6 @@ namespace Evaluator
             }
 
             File.WriteAllText(path1, sb.ToString().Replace('.', ','));
-        }
-
-        private double[] GetHistogramFrom(Rectangle block)
-        {
-            var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
-
-            for (int i = block.Y; i < block.Y + block.Height; i++)
-            {
-                for (int j = block.X; j < block.X + block.Width; j++)
-                {
-                    var LBPC = HelperMethods.CountLBPC(_greyValues, _bmp.Width, _bmp.Width * i + j);
-                    int b = HelperMethods.GetBinFor(LBPC.C);
-
-                    histogram[(LBPC.LBP) * Consts.Bins + b]++;
-                }
-            }
-
-            return histogram;
-        }
-
+        }        
     }
 }

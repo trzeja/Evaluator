@@ -30,7 +30,9 @@ namespace Evaluator
 
         public const double X = 2.5;
 
-        public const int ForceStop = -1082; //1115 to koniec dla lake //1521 koniec dla mosaic1 //1089 dla mosaic3
+        public const int ForceStop = -1082; //1115 to koniec dla lake //1521 koniec dla mosaic1 
+
+        public const int RegionsToRemain = 10;
     }
 
 }
