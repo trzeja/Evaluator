@@ -22,9 +22,9 @@ namespace Evaluator
         
         public const int SMin = 16;
        
-        public const double Y = 0.04; //0.02 dla leny 516
+        public const double Y = 0.04; 
 
-        public const int RegionsToRemain = 10;
+        public const int RegionsToRemain = 8;
     }
 
 }

@@ -19,30 +19,27 @@ namespace Evaluator
         private List<SubRegion> _subRegions;
         private int _subRegionsNumber;
 
-        public void ProcessImages()
+        public double ProcessImages(string path1, string path2)
         {
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic3.gif";
-            //string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
-            string path = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
-
-            ReadFile(path);
+            ReadFile(path1);
 
             CreateSubRegions();
             //var h1 = GetNormalizedHistogramfromFile();
             SaveIDsInArray();
-            DrawBoundariesInFile(path);
+            DrawBoundariesInFile(path1);
 
             Merge();
-            DrawBoundariesInFile(path);
+            DrawBoundariesInFile(path1);
 
             //ReadFile(path);
             //var h2 = GetNormalizedHistogramfromFile();
 
-            //SaveResults(h1);
-
             // var MSE = CalculateMSE(h1, h2);
+
+            return 0;
         }
+        //niech na razie zwraca int[] ID
+        //private Task<>
 
         private void ReadFile(string path)
         {
@@ -219,9 +216,11 @@ namespace Evaluator
 
             Merge smallestMIMerge;
 
+            var totalIterations = _subRegionsNumber - Consts.RegionsToRemain;
+
             while (_subRegionsNumber > Consts.RegionsToRemain && MIR < Consts.Y)
             {
-                Console.WriteLine(_subRegionsNumber); //TO DEL
+                Console.Write("\rPredicted state: " +  ((int)(100 - 100 * (_subRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
                 
                 smallestMIMerge = mergers.FirstOrDefault();
 
@@ -254,7 +253,6 @@ namespace Evaluator
 
             SaveMIRsInFile(MIRs); //TO DEL
             SaveIDsInArray();
-
         }
 
         private List<Merge> MergePair(Merge pair)

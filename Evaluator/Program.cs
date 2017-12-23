@@ -11,8 +11,14 @@ namespace Evaluator
     {
         static void Main(string[] args)
         {
-            var eva = new Evaluator();
-            eva.ProcessImages();
+            //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
+            //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic3.gif";
+            //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
+            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
+
+
+            var evaluator = new Evaluator();
+            var PSNR = evaluator.ProcessImages(path1, path1);
         }
     }
 }
