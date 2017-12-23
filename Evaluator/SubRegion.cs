@@ -9,10 +9,15 @@ namespace Evaluator
 {
     public class SubRegion
     {
-        //double[] _subRegionHistogram;
-            
-        private static int _bmpWidth;
-        private static byte[] _greyValues;
+        public static int BmpWidth { get; private set; }
+        public static byte[] GreyValues { get; private set; }
+
+        public double[] Histogram { get; private set; }
+        public int Pixels { get; private set; }
+        public int ID { get; private set; }
+
+        public List<Rectangle> Blocks { get; private set; }
+        public List<SubRegion> Neighbors { get; private set; }
 
         public SubRegion(Rectangle block, int id)
         {
@@ -25,40 +30,21 @@ namespace Evaluator
             Pixels = block.Width * block.Height;
 
             Histogram = GetHistogramFrom(block);
-            
-            NormalizeHistogram(Histogram, Pixels); //TEGO NIE BYLO!!!
-        }
-                
-        public double[] Histogram { get; private set; }
-        public int Pixels { get; private set; }
 
+            NormalizeHistogram();
+        }
 
         public static void Init(byte[] greyValues, int bmpWidth)
         {
-            _bmpWidth = bmpWidth;
-            _greyValues = greyValues;
+            BmpWidth = bmpWidth;
+            GreyValues = greyValues;
         }
-
-        public int ID { get; private set; }
-
-        public List<Rectangle> Blocks { get; set; }//to bedzie prywatne docelowo chyba
-        public List<SubRegion> Neighbors { get; set; } //to bedzie prywatne docelowo chyba
-
-        //public List<SubRegion> GetNeighbors()
-        //{
-        //    return Neighbors;
-        //}
-
+        
         public List<int> GetNeighboursIDs()
         {
             return new List<int>(Neighbors.Select(n => n.ID));
         }
-
-        public void RemoveNeighbor(int neighborID)
-        {
-            Neighbors.Remove(Neighbors.Find(n => n.ID == neighborID));
-        }
-
+        
         public void AddNeighbor(SubRegion newNeighbor)
         {
             if (!Neighbors.Contains(newNeighbor) && newNeighbor.ID != ID)
@@ -66,7 +52,17 @@ namespace Evaluator
                 Neighbors.Add(newNeighbor);
             }
         }
-        
+
+        public void RemoveNeighbor(int neighborID)
+        {
+            Neighbors.Remove(Neighbors.Find(n => n.ID == neighborID));
+        }
+
+        public void UpdateNeighbours(List<SubRegion> newNeighbors)
+        {
+            Neighbors = newNeighbors;
+        }
+
         public void AddBlocks(List<Rectangle> blocks)
         {
             Blocks.AddRange(blocks);
@@ -76,14 +72,13 @@ namespace Evaluator
                 Pixels += block.Width * block.Height;
             }
             
-            //nieoptymalnie
-            CalculateNormalizedHistogram(); //TODO add new histograms to existing or recalculate whole             
+            CalculateNormalizedHistogram();         
         }
-        
-        public double[] CalculateNormalizedHistogram()
+
+        public void CalculateNormalizedHistogram()
         {
             Histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
-            
+
             foreach (var block in Blocks)
             {
                 var blockHistogram = GetHistogramFrom(block);
@@ -94,16 +89,14 @@ namespace Evaluator
                 }
             }
 
-            NormalizeHistogram(Histogram, Pixels);
-
-            return Histogram;
+            NormalizeHistogram();
         }
 
-        public void SaveIDInArray(int[] IDs, int bmpWidth)
+        public void SaveIDsInArray(int[] IDs) 
         {
             foreach (var block in Blocks)
             {
-                SaveBlockIDInArray(block, IDs, bmpWidth);
+                SaveBlockIDInArray(block, IDs, BmpWidth);
             }
         }
 
@@ -115,7 +108,7 @@ namespace Evaluator
             {
                 for (int j = block.X; j < block.X + block.Width; j++)
                 {
-                    var LBPC = CountLBPC(_greyValues, _bmpWidth, _bmpWidth * i + j);
+                    var LBPC = CountLBPC(GreyValues, BmpWidth, BmpWidth * i + j);
                     int b = GetBinFor(LBPC.C);
 
                     histogram[(LBPC.LBP) * Consts.Bins + b]++;
@@ -124,15 +117,15 @@ namespace Evaluator
 
             return histogram;
         }
-
-        private void NormalizeHistogram(double[] histogram, int pixels)
+        
+        private void NormalizeHistogram()
         {
-            for (int i = 0; i < histogram.Length; i++)
+            for (int i = 0; i < Histogram.Length; i++)
             {
-                histogram[i] /= pixels;
+                Histogram[i] /= Pixels;
             }
         }
-        
+
         private void SaveBlockIDInArray(Rectangle block, int[] IDs, int bmpWidth)
         {
             var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
@@ -190,7 +183,7 @@ namespace Evaluator
                     smallerNeighborsSum += greyValues[NeighboursIndexes[i]];
                 }
             }
-            
+
             smallerNeighborsCount = Consts.Neighbors - biggerOrEqualNeighborsCount;
 
             if (smallerNeighborsCount == 0)

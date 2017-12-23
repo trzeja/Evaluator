@@ -111,9 +111,9 @@ namespace Evaluator
             _bmp.Save(output);
 
             System.Diagnostics.Process.Start(output);
-        }
+        } // TO DEL
 
-        private void ChangePixelColorIfFrontier(int pixelIdx)
+        private void ChangePixelColorIfFrontier(int pixelIdx) //TO DEL
         {
             #region NeighborsIndexes
 
@@ -201,8 +201,8 @@ namespace Evaluator
                 var regionNeighbors = _subRegions
                     .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
                     .ToList();
-
-                region.Neighbors = regionNeighbors;
+                
+                region.UpdateNeighbours(regionNeighbors);
             }
         }
 
@@ -249,12 +249,12 @@ namespace Evaluator
 
                 mergers.AddRange(newMergePairs);
 
-                SaveIDsInArray();
-
                 MIRs.Add(MIR.ToString()); //TO DEL 
             }
 
-            SaveMIRsInFile(MIRs);
+            SaveMIRsInFile(MIRs); //TO DEL
+            SaveIDsInArray();
+
         }
 
         private List<Merge> MergePair(Merge pair)
@@ -381,7 +381,7 @@ namespace Evaluator
                     continue;
                 }
 
-                region.SaveIDInArray(_ID, _bmp.Width);
+                region.SaveIDsInArray(_ID);
             }
         }
 
