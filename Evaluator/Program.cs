@@ -9,7 +9,6 @@ namespace Evaluator
 {
     class Program
     {
-
         static void Main(string[] args)
         {
             var eva = new Evaluator();

@@ -162,19 +162,19 @@ namespace Evaluator
 
             int subRegionID = 0;
 
-            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Consts.SMax)
+            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Consts.SMin)
             {
-                for (int j = mainBlock.X; j <= mainBlock.Width; j += Consts.SMax)
+                for (int j = mainBlock.X; j <= mainBlock.Width; j += Consts.SMin)
                 {
-                    int newBlockWidth = Consts.SMax;
-                    int newBlockHeight = Consts.SMax;
+                    int newBlockWidth = Consts.SMin;
+                    int newBlockHeight = Consts.SMin;
 
-                    if (j + Consts.SMax > mainBlock.Width)
+                    if (j + Consts.SMin > mainBlock.Width)
                     {
                         newBlockWidth = mainBlock.Width - j;
                     }
 
-                    if (i + Consts.SMax > mainBlock.Height)
+                    if (i + Consts.SMin > mainBlock.Height)
                     {
                         newBlockHeight = mainBlock.Height - i;
                     }
