@@ -11,151 +11,179 @@ namespace Evaluator
 {
     public class Evaluator
     {
-        private byte[] _greyValues;
+        private byte[] GreyValues { get; set; }
 
-        private int[] _ID;
-        private Bitmap _bmp;
+        private int[] ID { get; set; }
+        private Bitmap Bmp { get; set; }
 
-        private List<SubRegion> _subRegions;
-        private int _subRegionsNumber;
+        private List<SubRegion> SubRegions { get; set; }
+        private int SubRegionsNumber { get; set; }
 
-        public double ProcessImages(string path1, string path2)
+        private List<int> FrontierPixelsIndexes { get; set; }
+
+        public double CalculatePSNR(string path1, string path2)
+        {
+            ReadFile(path1);
+            var greyValues1 = GreyValues;
+            ReadFile(path2);
+            var greyValues2 = GreyValues;
+
+            double sum = 0;
+
+            for (int i = 0; i < greyValues1.Length; i++)
+            {
+                sum += Math.Pow((greyValues1[i] - greyValues2[i]), 2);
+            }
+
+            var MSE = sum / greyValues1.Length;
+            
+            return 10 * Math.Log10((Math.Pow(Consts.SignalMax,2)) / MSE);
+        }
+
+        public double SegmentImages(string path1, string path2)
         {
             ReadFile(path1);
 
             CreateSubRegions();
-            //var h1 = GetNormalizedHistogramfromFile();
+            
+            SaveIDsInArray(); //TO DEL
+            //DrawBoundariesInFile(path1); //TO DEL
+
+            Merge(7);
             SaveIDsInArray();
-            DrawBoundariesInFile(path1);
 
-            Merge();
-            DrawBoundariesInFile(path1);
+            //var ID1 = ID;
+            
+            //DrawBoundariesInFile(path1);
 
-            //ReadFile(path);
-            //var h2 = GetNormalizedHistogramfromFile();
+            SaveFrontierPixelsIndexes();
 
-            // var MSE = CalculateMSE(h1, h2);
+            var frontierPixelsIndexes1 = FrontierPixelsIndexes;
+            //////////////////////////////////2
+            ReadFile(path2);
 
-            return 0;
+            CreateSubRegions();
+
+            SaveIDsInArray(); //TO DEL
+            //DrawBoundariesInFile(path2); //TO DEL
+
+            Merge(8);
+            SaveIDsInArray();
+            //DrawBoundariesInFile(path2);
+
+            SaveFrontierPixelsIndexes();
+            var frontierPixelsIndexes2 = FrontierPixelsIndexes;
+
+            //var ID2 = ID;
+
+            //var similarity = CalculateSimilarity(ID1, ID2);
+            var similarity = CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
+
+            return similarity;
         }
-        //niech na razie zwraca int[] ID
-        //private Task<>
-
+        
         private void ReadFile(string path)
         {
-            _bmp = new Bitmap(path);
+            Bmp = new Bitmap(path);
 
-            int pixelsToTrim = _bmp.Width % 4;
+            int pixelsToTrim = Bmp.Width % 4;
             if (pixelsToTrim != 0)
             {
-                _bmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);                
+                Bmp = Bmp.Clone(new Rectangle(0, 0, Bmp.Width - pixelsToTrim, Bmp.Height), Bmp.PixelFormat);                
             }
 
-            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
-            BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                _bmp.PixelFormat);
+            Rectangle rect = new Rectangle(0, 0, Bmp.Width, Bmp.Height);
+            BitmapData bmpData = Bmp.LockBits(rect, ImageLockMode.ReadWrite,
+                Bmp.PixelFormat);
 
             IntPtr ptr = bmpData.Scan0;                        
 
-            var bytes = _bmp.Width * _bmp.Height;
-            _greyValues = new byte[bytes];
-            _ID = Enumerable.Repeat(-1, bytes).ToArray();
+            var bytes = Bmp.Width * Bmp.Height;
+            GreyValues = new byte[bytes];
+            ID = Enumerable.Repeat(-1, bytes).ToArray();
 
-            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, bytes);
+            System.Runtime.InteropServices.Marshal.Copy(ptr, GreyValues, 0, bytes);
 
-            SubRegion.Init(_greyValues, _bmp.Width);
+            SubRegion.Init(GreyValues, Bmp.Width);
 
-            _bmp.UnlockBits(bmpData);
+            Bmp.UnlockBits(bmpData);
         }
         
-        private void DrawBoundariesInFile(string path)
+        private void DrawBoundariesInFile(string path) //TO DEL
         {
-            _bmp = new Bitmap(path);
+            Bmp = new Bitmap(path);
 
-            int pixelsToTrim = _bmp.Width % 4;
+            int pixelsToTrim = Bmp.Width % 4;
             if (pixelsToTrim != 0)
             {
-                _bmp = _bmp.Clone(new Rectangle(0, 0, _bmp.Width - pixelsToTrim, _bmp.Height), _bmp.PixelFormat);
+                Bmp = Bmp.Clone(new Rectangle(0, 0, Bmp.Width - pixelsToTrim, Bmp.Height), Bmp.PixelFormat);
             }
 
-            Rectangle rect = new Rectangle(0, 0, _bmp.Width, _bmp.Height);
-            BitmapData bmpData = _bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                _bmp.PixelFormat);
+            Rectangle rect = new Rectangle(0, 0, Bmp.Width, Bmp.Height);
+            BitmapData bmpData = Bmp.LockBits(rect, ImageLockMode.ReadWrite,
+                Bmp.PixelFormat);
 
             IntPtr ptr = bmpData.Scan0;
 
-            var bytes = _bmp.Width * _bmp.Height;
-            _greyValues = new byte[bytes];
+            var bytes = Bmp.Width * Bmp.Height;
+            GreyValues = new byte[bytes];
 
-            System.Runtime.InteropServices.Marshal.Copy(ptr, _greyValues, 0, bytes);
+            System.Runtime.InteropServices.Marshal.Copy(ptr, GreyValues, 0, bytes);
 
-            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+            Rectangle mainBlock = new Rectangle(1, 1, Bmp.Width - 1, Bmp.Height - 1);
 
             for (int i = mainBlock.Y; i < mainBlock.Height; i++)
             {
                 for (int j = mainBlock.X; j < mainBlock.Width; j++)
                 {
-                    ChangePixelColorIfFrontier(_bmp.Width * i + j); //spr czy bmp.width dobre
+                    ChangePixelColorIfFrontier(Bmp.Width * i + j); //spr czy bmp.width dobre
                 }
             }
 
-            System.Runtime.InteropServices.Marshal.Copy(_greyValues, 0, ptr, bytes);
+            System.Runtime.InteropServices.Marshal.Copy(GreyValues, 0, ptr, bytes);
 
-            _bmp.UnlockBits(bmpData);
+            Bmp.UnlockBits(bmpData);
 
             string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_grayDrawed.gif";
 
-            _bmp.Save(output);
+            Bmp.Save(output);
 
             System.Diagnostics.Process.Start(output);
-        } // TO DEL
+        }
 
         private void ChangePixelColorIfFrontier(int pixelIdx) //TO DEL
         {
             #region NeighborsIndexes
 
-            var neighborsIndexes = new List<int>();
-
-            int northWestNeighborIdx = pixelIdx - _bmp.Width - 1;
-            neighborsIndexes.Add(northWestNeighborIdx);
-
-            int northNeighborIdx = pixelIdx - _bmp.Width;
-            neighborsIndexes.Add(northNeighborIdx);
-
-            int northEastNeighborIdx = pixelIdx - _bmp.Width + 1;
-            neighborsIndexes.Add(northEastNeighborIdx);
-
-            int eastNeighborIdx = pixelIdx + 1;
-            neighborsIndexes.Add(eastNeighborIdx);
-
-            int westNeighborIdx = pixelIdx - 1;
-            neighborsIndexes.Add(westNeighborIdx);
-
-            int southWestNeighborIdx = pixelIdx + _bmp.Width - 1;
-            neighborsIndexes.Add(southWestNeighborIdx);
-
-            int southNeighborIdx = pixelIdx + _bmp.Width;
-            neighborsIndexes.Add(southNeighborIdx);
-
-            int southEastNeighborIdx = pixelIdx + _bmp.Width + 1;
-            neighborsIndexes.Add(southEastNeighborIdx);
+            var neighborsIndexes = new List<int>
+            {
+                pixelIdx - Bmp.Width - 1,
+                pixelIdx - Bmp.Width,
+                pixelIdx - Bmp.Width + 1,
+                pixelIdx + 1,
+                pixelIdx - 1,
+                pixelIdx + Bmp.Width - 1,
+                pixelIdx + Bmp.Width,
+                pixelIdx + Bmp.Width + 1
+            };
 
             #endregion
 
             foreach (var neighborIdx in neighborsIndexes)
             {
-                if (_ID[pixelIdx] != _ID[neighborIdx])
+                if (ID[pixelIdx] != ID[neighborIdx])
                 {
-                    _greyValues[pixelIdx] = 0;
+                    GreyValues[pixelIdx] = 0;
                 }
             }
         }
 
         private void CreateSubRegions()
         {
-            _subRegions = new List<SubRegion>();
+            SubRegions = new List<SubRegion>();
+            SubRegionsNumber = 0;
 
-            Rectangle mainBlock = new Rectangle(1, 1, _bmp.Width - 1, _bmp.Height - 1);
+            Rectangle mainBlock = new Rectangle(1, 1, Bmp.Width - 1, Bmp.Height - 1);
 
             int subRegionID = 0;
 
@@ -179,8 +207,8 @@ namespace Evaluator
                     var newBlock = new Rectangle(j, i, newBlockWidth, newBlockHeight);
 
                     var newSubRegion = new SubRegion(newBlock, subRegionID++);
-                    _subRegions.Add(newSubRegion);
-                    _subRegionsNumber++;
+                    SubRegions.Add(newSubRegion);
+                    SubRegionsNumber++;
                 }
             }
 
@@ -189,13 +217,13 @@ namespace Evaluator
 
         private void SetSubRegionsNeighbors()
         {
-            foreach (var region in _subRegions)
+            foreach (var region in SubRegions)
             {
                 var block = region.Blocks.FirstOrDefault();
                 //create block enlarged by 1 in each direction
                 var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.SMin + 2, Consts.SMin + 2);
 
-                var regionNeighbors = _subRegions
+                var regionNeighbors = SubRegions
                     .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
                     .ToList();
                 
@@ -203,7 +231,7 @@ namespace Evaluator
             }
         }
 
-        private void Merge()
+        private void Merge(int regionsToRemain)
         {
             var MIRs = new List<string>();
 
@@ -215,12 +243,12 @@ namespace Evaluator
             CalculateMIsFor(mergers);
 
             Merge smallestMIMerge;
+            
+            var totalIterations = SubRegionsNumber - regionsToRemain;
 
-            var totalIterations = _subRegionsNumber - Consts.RegionsToRemain;
-
-            while (_subRegionsNumber > Consts.RegionsToRemain && MIR < Consts.Y)
+            while (SubRegionsNumber > regionsToRemain && MIR < Consts.Y)
             {
-                Console.Write("\rPredicted state: " +  ((int)(100 - 100 * (_subRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
+                Console.Write("\rPredicted state: " +  ((int)(100 - 100 * (SubRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
                 
                 smallestMIMerge = mergers.FirstOrDefault();
 
@@ -252,13 +280,13 @@ namespace Evaluator
             }
 
             SaveMIRsInFile(MIRs); //TO DEL
-            SaveIDsInArray();
+            //SaveIDsInArray();  //TO DEL
         }
 
         private List<Merge> MergePair(Merge pair)
         {
-            var subRegionToRemain = _subRegions[pair.SubRegion1ID];
-            var subRegionToDelete = _subRegions[pair.SubRegion2ID];
+            var subRegionToRemain = SubRegions[pair.SubRegion1ID];
+            var subRegionToDelete = SubRegions[pair.SubRegion2ID];
 
             var subRegionToDeleteNeighbors = subRegionToDelete.Neighbors;
 
@@ -271,8 +299,8 @@ namespace Evaluator
 
             subRegionToRemain.AddBlocks(subRegionToDelete.Blocks);
 
-            _subRegions[subRegionToDelete.ID] = null;
-            _subRegionsNumber--;
+            SubRegions[subRegionToDelete.ID] = null;
+            SubRegionsNumber--;
 
             var newMergePairs = new List<Merge>();
             foreach (var neighbor in subRegionToRemain.Neighbors)
@@ -300,9 +328,9 @@ namespace Evaluator
         {
             var mergers = new List<Merge>();
 
-            for (int i = 0; i < _subRegions.Count; i++)
+            for (int i = 0; i < SubRegions.Count; i++)
             {
-                var neighborsIDs = _subRegions[i].GetNeighboursIDs();
+                var neighborsIDs = SubRegions[i].GetNeighboursIDs();
                 foreach (var neighborID in neighborsIDs)
                 {
                     if (neighborID < i)
@@ -312,7 +340,7 @@ namespace Evaluator
 
                     var mergePair = new Merge()
                     {
-                        SubRegion1ID = _subRegions[i].ID,
+                        SubRegion1ID = SubRegions[i].ID,
                         SubRegion2ID = neighborID,
                         MI = double.MaxValue
                     };
@@ -328,8 +356,8 @@ namespace Evaluator
         {
             foreach (var merge in mergers)
             {
-                var subRegion1 = _subRegions[merge.SubRegion1ID];
-                var subRegion2 = _subRegions[merge.SubRegion2ID];
+                var subRegion1 = SubRegions[merge.SubRegion1ID];
+                var subRegion2 = SubRegions[merge.SubRegion2ID];
 
                 int pixels1 = subRegion1.Pixels;
                 int pixels2 = subRegion2.Pixels;
@@ -372,14 +400,14 @@ namespace Evaluator
 
         private void SaveIDsInArray()
         {
-            foreach (var region in _subRegions)
+            foreach (var region in SubRegions)
             {
                 if (region == null)
                 {
                     continue;
                 }
 
-                region.SaveIDsInArray(_ID);
+                region.SaveIDsInArray(ID);
             }
         }
 
@@ -394,6 +422,72 @@ namespace Evaluator
             }
 
             File.WriteAllText(path1, sb.ToString().Replace('.', ','));
-        }        
+        }
+
+        private double CalculateFrontiersSimilarity(List<int> indexes1, List<int> indexes2)
+        {
+            int matchedIndexes = 0;
+            
+            if (indexes2.Count > indexes1.Count)
+            {
+                var temp = indexes1;
+                indexes1 = indexes2;
+                indexes2 = temp;
+            }
+
+            foreach (var idx in indexes1)
+            {
+                if (indexes2.Contains(idx))
+                {
+                    matchedIndexes++;
+                }
+            }
+
+            return (int)(matchedIndexes / (double)indexes1.Count * 100);
+            
+        }
+
+        private void SaveFrontierPixelsIndexes()
+        {
+            FrontierPixelsIndexes = new List<int>();
+
+            Rectangle mainBlock = new Rectangle(3, 3, Bmp.Width - 3, Bmp.Height - 3); //omit picture frame border
+
+            for (int i = mainBlock.Y; i < mainBlock.Height; i++)
+            {
+                for (int j = mainBlock.X; j < mainBlock.Width; j++)
+                {
+                    SaveFrontierPixelIndex(Bmp.Width * i + j); 
+                }
+            }
+        }
+
+        private void SaveFrontierPixelIndex(int pixelIdx)
+        {
+            #region NeighborsIndexes
+
+            var neighborsIndexes = new List<int>
+            {
+                pixelIdx - Bmp.Width - 1,
+                pixelIdx - Bmp.Width,
+                pixelIdx - Bmp.Width + 1,
+                pixelIdx + 1,
+                pixelIdx - 1,
+                pixelIdx + Bmp.Width - 1,
+                pixelIdx + Bmp.Width,
+                pixelIdx + Bmp.Width + 1
+            };
+
+            #endregion
+
+            foreach (var neighborIdx in neighborsIndexes)
+            {
+                if (ID[pixelIdx] != ID[neighborIdx])
+                {                   
+                    FrontierPixelsIndexes.Add(pixelIdx);
+                    break;
+                }
+            }
+        }
     }
 }

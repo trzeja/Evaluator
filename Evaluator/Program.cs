@@ -14,11 +14,14 @@ namespace Evaluator
             //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\base.gif";
             //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\mosaic3.gif";
             //string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_gray515.gif";
-            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
+            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake50.gif";
+            string path2 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake.gif";
 
 
             var evaluator = new Evaluator();
-            var PSNR = evaluator.ProcessImages(path1, path1);
+            var PSNR = evaluator.CalculatePSNR(path1, path1);
+            var Similarity = evaluator.SegmentImages(path1, path1);
+             
         }
     }
 }
