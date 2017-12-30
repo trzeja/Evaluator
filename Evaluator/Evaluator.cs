@@ -14,12 +14,12 @@ namespace Evaluator
         private byte[] GreyValues { get; set; }
 
         private int[] ID { get; set; }
+
         private Bitmap Bmp { get; set; }
 
         private List<SubRegion> SubRegions { get; set; }
-        private int SubRegionsNumber { get; set; }
 
-        private List<int> FrontierPixelsIndexes { get; set; }
+        private int SubRegionsNumber { get; set; }
 
         public double CalculatePSNR(string path1, string path2)
         {
@@ -40,46 +40,29 @@ namespace Evaluator
             return 10 * Math.Log10((Math.Pow(Consts.SignalMax,2)) / MSE);
         }
 
-        public double SegmentImages(string path1, string path2)
+        public double CalculateSimilarityBySegmentation(string path1, string path2)
         {
-            ReadFile(path1);
+            var frontierPixelsIndexes1 = SegmentImage(path1);
 
-            CreateSubRegions();
-            
-            SaveIDsInArray(); //TO DEL
-            //DrawBoundariesInFile(path1); //TO DEL
+            var frontierPixelsIndexes2 = SegmentImage(path2);
 
-            Merge(7);
-            SaveIDsInArray();
-
-            //var ID1 = ID;
-            
-            //DrawBoundariesInFile(path1);
-
-            SaveFrontierPixelsIndexes();
-
-            var frontierPixelsIndexes1 = FrontierPixelsIndexes;
-            //////////////////////////////////2
-            ReadFile(path2);
-
-            CreateSubRegions();
-
-            SaveIDsInArray(); //TO DEL
-            //DrawBoundariesInFile(path2); //TO DEL
-
-            Merge(8);
-            SaveIDsInArray();
-            //DrawBoundariesInFile(path2);
-
-            SaveFrontierPixelsIndexes();
-            var frontierPixelsIndexes2 = FrontierPixelsIndexes;
-
-            //var ID2 = ID;
-
-            //var similarity = CalculateSimilarity(ID1, ID2);
             var similarity = CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
 
             return similarity;
+        }
+
+        private List<int> SegmentImage(string path)
+        {
+            ReadFile(path);
+
+            CreateSubRegions();
+
+            Merge();
+
+            SaveIDsInArray();            
+            DrawBoundariesInFile(path); // TO DEL
+
+            return GetFrontierPixelsIndexes();                        
         }
         
         private void ReadFile(string path)
@@ -231,9 +214,9 @@ namespace Evaluator
             }
         }
 
-        private void Merge(int regionsToRemain)
+        private void Merge()
         {
-            var MIRs = new List<string>();
+            var MIRs = new List<string>(); // TO DEL
 
             double MImax = double.MinValue;
             double MIcur;
@@ -244,9 +227,9 @@ namespace Evaluator
 
             Merge smallestMIMerge;
             
-            var totalIterations = SubRegionsNumber - regionsToRemain;
+            var totalIterations = SubRegionsNumber - Consts.RegionsToRemain;
 
-            while (SubRegionsNumber > regionsToRemain && MIR < Consts.Y)
+            while (SubRegionsNumber > Consts.RegionsToRemain && MIR < Consts.Y)
             {
                 Console.Write("\rPredicted state: " +  ((int)(100 - 100 * (SubRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
                 
@@ -280,7 +263,6 @@ namespace Evaluator
             }
 
             SaveMIRsInFile(MIRs); //TO DEL
-            //SaveIDsInArray();  //TO DEL
         }
 
         private List<Merge> MergePair(Merge pair)
@@ -428,7 +410,7 @@ namespace Evaluator
         {
             int matchedIndexes = 0;
             
-            if (indexes2.Count > indexes1.Count)
+            if (indexes2.Count() > indexes1.Count())
             {
                 var temp = indexes1;
                 indexes1 = indexes2;
@@ -443,13 +425,13 @@ namespace Evaluator
                 }
             }
 
-            return (int)(matchedIndexes / (double)indexes1.Count * 100);
+            return (int)(matchedIndexes / (double)indexes1.Count() * 100);
             
         }
 
-        private void SaveFrontierPixelsIndexes()
+        private List<int> GetFrontierPixelsIndexes()
         {
-            FrontierPixelsIndexes = new List<int>();
+            var frontierPixelsIndexes = new List<int>();
 
             Rectangle mainBlock = new Rectangle(3, 3, Bmp.Width - 3, Bmp.Height - 3); //omit picture frame border
 
@@ -457,37 +439,44 @@ namespace Evaluator
             {
                 for (int j = mainBlock.X; j < mainBlock.Width; j++)
                 {
-                    SaveFrontierPixelIndex(Bmp.Width * i + j); 
+                    int pixelIndex = Bmp.Width * i + j;
+                    if (IsOnFrontier(pixelIndex))
+                    {
+                        frontierPixelsIndexes.Add(pixelIndex);
+                    }                    
                 }
             }
+
+            return frontierPixelsIndexes;
         }
 
-        private void SaveFrontierPixelIndex(int pixelIdx)
+        private bool IsOnFrontier(int pixelIndex)
         {
             #region NeighborsIndexes
 
             var neighborsIndexes = new List<int>
             {
-                pixelIdx - Bmp.Width - 1,
-                pixelIdx - Bmp.Width,
-                pixelIdx - Bmp.Width + 1,
-                pixelIdx + 1,
-                pixelIdx - 1,
-                pixelIdx + Bmp.Width - 1,
-                pixelIdx + Bmp.Width,
-                pixelIdx + Bmp.Width + 1
+                pixelIndex - Bmp.Width - 1,
+                pixelIndex - Bmp.Width,
+                pixelIndex - Bmp.Width + 1,
+                pixelIndex + 1,
+                pixelIndex - 1,
+                pixelIndex + Bmp.Width - 1,
+                pixelIndex + Bmp.Width,
+                pixelIndex + Bmp.Width + 1
             };
 
             #endregion
 
             foreach (var neighborIdx in neighborsIndexes)
             {
-                if (ID[pixelIdx] != ID[neighborIdx])
-                {                   
-                    FrontierPixelsIndexes.Add(pixelIdx);
-                    break;
+                if (ID[pixelIndex] != ID[neighborIdx])
+                {
+                    return true;
                 }
             }
+
+            return false;
         }
     }
 }
