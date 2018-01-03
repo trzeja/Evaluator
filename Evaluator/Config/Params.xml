@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Params>
+  <Bins>16</Bins> 
+  <SMin>16</SMin>
+  <Y>0.04</Y>
+  <RegionsToRemain>7</RegionsToRemain>
+</Params>

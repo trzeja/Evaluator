@@ -22,25 +22,26 @@ namespace Evaluator
             //string path1 = @" C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake50.gif";
             //string path2 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake50.gif";
 
-            string path0 = args[0];
-            string path1 = args[1];
-            string path2 = args[2];
-            
-            Console.WriteLine("trying path0: " + path0);
+            //string resultsFilePath = args[0];
+            //string image1FilePath = args[1];
+            //string image2FilePath = args[2];
 
-            if (File.Exists(path1) && File.Exists(path2))
+            string resultsFilePath = @" C:\Users\trzej_000\Documents\Visual Studio 2017\Projects\Evaluator\Evaluator\bin\Debug\results.txt";
+            string image1FilePath = @" C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake50.gif";
+            string image2FilePath = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lake50.gif";
+
+
+            if (File.Exists(image1FilePath) && File.Exists(image2FilePath))
             {
-                Console.WriteLine("Its working!");
-
                 var evaluator = new Evaluator();
-                var PSNR = evaluator.CalculatePSNR(path1, path2);
-                var similarity = evaluator.CalculateSimilarityBySegmentation(path1, path2);
+                var PSNR = evaluator.CalculatePSNR(image1FilePath, image2FilePath);
+                var similarity = evaluator.CalculateSimilarityBySegmentation(image1FilePath, image2FilePath);
   
-                SaveResults(PSNR, similarity, path0);
+                //SaveResults(PSNR, similarity, resultsFilePath);
             }
             else
             {
-                Console.WriteLine("Incorrect path - file not found");
+                Console.WriteLine("Incorrect path - image file not found");
             }
             
         }

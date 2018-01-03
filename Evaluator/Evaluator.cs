@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Drawing; // dodac nalezy referencje
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 
@@ -36,35 +35,35 @@ namespace Evaluator
             }
 
             var MSE = sum / greyValues1.Length;
-            
-            return 10 * Math.Log10((Math.Pow(Consts.SignalMax,2)) / MSE);
+
+            return 10 * Math.Log10((Math.Pow(Params.SignalMax, 2)) / MSE);
         }
 
         public double CalculateSimilarityBySegmentation(string path1, string path2)
         {
-            var frontierPixelsIndexes1 = SegmentImage(path1);
+            int imageID = -1;
 
-            var frontierPixelsIndexes2 = SegmentImage(path2);
+            var frontierPixelsIndexes1 = SegmentImage(path1, ++imageID);
 
-            var similarity = CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
+            var frontierPixelsIndexes2 = SegmentImage(path2, ++imageID);
 
-            return similarity;
+            return CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
         }
 
-        private List<int> SegmentImage(string path)
+        private List<int> SegmentImage(string path, int imageID)
         {
             ReadFile(path);
 
             CreateSubRegions();
 
-            Merge();
+            Merge(imageID);
 
-            SaveIDsInArray();            
-            DrawBoundariesInFile(path); // TO DEL
+            SaveIDsInArray();
+            //DrawBoundariesInFile(path); // TO DEL
 
-            return GetFrontierPixelsIndexes();                        
+            return GetFrontierPixelsIndexes();
         }
-        
+
         private void ReadFile(string path)
         {
             Bmp = new Bitmap(path);
@@ -72,14 +71,14 @@ namespace Evaluator
             int pixelsToTrim = Bmp.Width % 4;
             if (pixelsToTrim != 0)
             {
-                Bmp = Bmp.Clone(new Rectangle(0, 0, Bmp.Width - pixelsToTrim, Bmp.Height), Bmp.PixelFormat);                
+                Bmp = Bmp.Clone(new Rectangle(0, 0, Bmp.Width - pixelsToTrim, Bmp.Height), Bmp.PixelFormat);
             }
 
             Rectangle rect = new Rectangle(0, 0, Bmp.Width, Bmp.Height);
             BitmapData bmpData = Bmp.LockBits(rect, ImageLockMode.ReadWrite,
                 Bmp.PixelFormat);
 
-            IntPtr ptr = bmpData.Scan0;                        
+            IntPtr ptr = bmpData.Scan0;
 
             var bytes = Bmp.Width * Bmp.Height;
             GreyValues = new byte[bytes];
@@ -91,7 +90,7 @@ namespace Evaluator
 
             Bmp.UnlockBits(bmpData);
         }
-        
+
         private void DrawBoundariesInFile(string path) //TO DEL
         {
             Bmp = new Bitmap(path);
@@ -170,19 +169,19 @@ namespace Evaluator
 
             int subRegionID = 0;
 
-            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Consts.SMin)
+            for (int i = mainBlock.Y; i <= mainBlock.Height; i += Params.SMin)
             {
-                for (int j = mainBlock.X; j <= mainBlock.Width; j += Consts.SMin)
+                for (int j = mainBlock.X; j <= mainBlock.Width; j += Params.SMin)
                 {
-                    int newBlockWidth = Consts.SMin;
-                    int newBlockHeight = Consts.SMin;
+                    int newBlockWidth = Params.SMin;
+                    int newBlockHeight = Params.SMin;
 
-                    if (j + Consts.SMin > mainBlock.Width)
+                    if (j + Params.SMin > mainBlock.Width)
                     {
                         newBlockWidth = mainBlock.Width - j;
                     }
 
-                    if (i + Consts.SMin > mainBlock.Height)
+                    if (i + Params.SMin > mainBlock.Height)
                     {
                         newBlockHeight = mainBlock.Height - i;
                     }
@@ -204,17 +203,17 @@ namespace Evaluator
             {
                 var block = region.Blocks.FirstOrDefault();
                 //create block enlarged by 1 in each direction
-                var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Consts.SMin + 2, Consts.SMin + 2);
+                var enlargedBlock = new Rectangle(block.X - 1, block.Y - 1, Params.SMin + 2, Params.SMin + 2);
 
                 var regionNeighbors = SubRegions
                     .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
                     .ToList();
-                
+
                 region.UpdateNeighbours(regionNeighbors);
             }
         }
 
-        private void Merge()
+        private void Merge(int imageID)
         {
             var MIRs = new List<string>(); // TO DEL
 
@@ -226,13 +225,19 @@ namespace Evaluator
             CalculateMIsFor(mergers);
 
             Merge smallestMIMerge;
-            
-            var totalIterations = SubRegionsNumber - Consts.RegionsToRemain;
 
-            while (SubRegionsNumber > Consts.RegionsToRemain && MIR < Consts.Y)
+            var totalIterations = SubRegionsNumber - Params.RegionsToRemain;
+
+            for (int i = 0; i < imageID; i++)
             {
-                Console.Write("\rPredicted state: " +  ((int)(100 - 100 * (SubRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
-                
+                Console.Write(Environment.NewLine);
+            }
+
+            while (SubRegionsNumber > Params.RegionsToRemain && MIR < Params.Y)
+            {
+                Console.Write("\rImage " + (imageID + 1).ToString() + " predicted segmentation state: " +
+                ((int)(100 - 100 * (SubRegionsNumber / (double)(totalIterations)))).ToString() + "%        ");
+
                 smallestMIMerge = mergers.FirstOrDefault();
 
                 foreach (var merge in mergers)
@@ -251,11 +256,11 @@ namespace Evaluator
                 MIcur = pairToMarge.MI;
                 MIR = MIcur / MImax;
 
-                var newMergePairs = MergePair(pairToMarge); 
+                var newMergePairs = MergePair(pairToMarge);
 
                 RemoveOldMergers(mergers, pairToMarge);
 
-                CalculateMIsFor(newMergePairs); 
+                CalculateMIsFor(newMergePairs);
 
                 mergers.AddRange(newMergePairs);
 
@@ -368,18 +373,6 @@ namespace Evaluator
             return sum / histogram1.Length;
         }
 
-        private void SaveHistogramInFile(double[] results) // TO DEL
-        {
-            string[] positions = new string[results.Length];
-
-            for (int i = 0; i < results.Length; i++)
-            {
-                positions[i] = /*i + " " +*/ results[i].ToString().Replace('.', ',');
-            }
-
-            System.IO.File.WriteAllLines(@"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\histogram.txt", positions);
-        }
-
         private void SaveIDsInArray()
         {
             foreach (var region in SubRegions)
@@ -409,7 +402,7 @@ namespace Evaluator
         private double CalculateFrontiersSimilarity(List<int> indexes1, List<int> indexes2)
         {
             int matchedIndexes = 0;
-            
+
             if (indexes2.Count() > indexes1.Count())
             {
                 var temp = indexes1;
@@ -426,7 +419,7 @@ namespace Evaluator
             }
 
             return (int)(matchedIndexes / (double)indexes1.Count() * 100);
-            
+
         }
 
         private List<int> GetFrontierPixelsIndexes()
@@ -443,7 +436,7 @@ namespace Evaluator
                     if (IsOnFrontier(pixelIndex))
                     {
                         frontierPixelsIndexes.Add(pixelIndex);
-                    }                    
+                    }
                 }
             }
 

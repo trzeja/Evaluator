@@ -77,7 +77,7 @@ namespace Evaluator
 
         public void CalculateNormalizedHistogram()
         {
-            Histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            Histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
 
             foreach (var block in Blocks)
             {
@@ -102,7 +102,7 @@ namespace Evaluator
 
         private double[] GetHistogramFrom(Rectangle block)
         {
-            var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            var histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
 
             for (int i = block.Y; i < block.Y + block.Height; i++)
             {
@@ -111,7 +111,7 @@ namespace Evaluator
                     var LBPC = CountLBPC(GreyValues, BmpWidth, BmpWidth * i + j);
                     int b = GetBinFor(LBPC.C);
 
-                    histogram[(LBPC.LBP) * Consts.Bins + b]++;
+                    histogram[(LBPC.LBP) * Params.Bins + b]++;
                 }
             }
 
@@ -128,7 +128,7 @@ namespace Evaluator
 
         private void SaveBlockIDInArray(Rectangle block, int[] IDs, int bmpWidth)
         {
-            var histogram = new double[(Consts.MaxLBP + 1) * Consts.Bins];
+            var histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
 
             for (int i = block.Y; i < block.Y + block.Height; i++)
             {
@@ -141,8 +141,8 @@ namespace Evaluator
 
         private int GetBinFor(double c)
         {
-            c += Consts.MaxC; // move to <0,MaxC*2> range from <-MaxC,MaxC>             
-            int bin = (int)Math.Floor(c / Consts.BinSize);
+            c += Params.MaxC; // move to <0,MaxC*2> range from <-MaxC,MaxC>             
+            int bin = (int)Math.Floor(c / Params.BinSize);
 
             return bin;
         }
@@ -184,7 +184,7 @@ namespace Evaluator
                 }
             }
 
-            smallerNeighborsCount = Consts.Neighbors - biggerOrEqualNeighborsCount;
+            smallerNeighborsCount = Params.Neighbors - biggerOrEqualNeighborsCount;
 
             if (smallerNeighborsCount == 0)
             {
