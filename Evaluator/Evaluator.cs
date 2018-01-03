@@ -433,7 +433,7 @@ namespace Evaluator
         {
             var frontierPixelsIndexes = new List<int>();
 
-            Rectangle mainBlock = new Rectangle(3, 3, Bmp.Width - 3, Bmp.Height - 3); //omit picture frame border
+            Rectangle mainBlock = new Rectangle(3, 3, Bmp.Width - 3, Bmp.Height - 3); // omit picture frame border
 
             for (int i = mainBlock.Y; i < mainBlock.Height; i++)
             {
