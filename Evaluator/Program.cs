@@ -35,10 +35,7 @@ namespace Evaluator
                 var evaluator = new Evaluator();
                 var PSNR = evaluator.CalculatePSNR(path1, path2);
                 var similarity = evaluator.CalculateSimilarityBySegmentation(path1, path2);
-
-                //var PSNR = 1.2;
-                //var similarity = 2.1;
-                    
+  
                 SaveResults(PSNR, similarity, path0);
             }
             else
