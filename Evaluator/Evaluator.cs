@@ -59,7 +59,7 @@ namespace Evaluator
             Merge(imageID);
 
             SaveIDsInArray();
-            //DrawBoundariesInFile(path); // TO DEL
+            //DrawBoundariesInFile(path, imageID); // TO DEL
 
             return GetFrontierPixelsIndexes();
         }
@@ -91,7 +91,7 @@ namespace Evaluator
             Bmp.UnlockBits(bmpData);
         }
 
-        private void DrawBoundariesInFile(string path) //TO DEL
+        private void DrawBoundariesInFile(string path, int imageID) //TO DEL
         {
             Bmp = new Bitmap(path);
 
@@ -126,7 +126,7 @@ namespace Evaluator
 
             Bmp.UnlockBits(bmpData);
 
-            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\lena_grayDrawed.gif";
+            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\frontiersDrawed" + imageID.ToString() + ".gif";
 
             Bmp.Save(output);
 
@@ -418,7 +418,7 @@ namespace Evaluator
                 }
             }
 
-            return (int)(matchedIndexes / (double)indexes1.Count() * 100);
+            return matchedIndexes / (double)indexes1.Count() * 100;
 
         }
 
