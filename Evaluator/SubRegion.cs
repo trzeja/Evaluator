@@ -9,15 +9,15 @@ namespace Evaluator
 {
     public class SubRegion
     {
-        public static int BmpWidth { get; private set; }
-        public static byte[] GreyValues { get; private set; }
-
         public double[] Histogram { get; private set; }
         public int Pixels { get; private set; }
         public int ID { get; private set; }
 
         public List<Rectangle> Blocks { get; private set; }
         public List<SubRegion> Neighbors { get; private set; }
+
+        private static int BmpWidth { get; set; }
+        private static byte[] GreyValues { get; set; }
 
         public SubRegion(Rectangle block, int id)
         {
