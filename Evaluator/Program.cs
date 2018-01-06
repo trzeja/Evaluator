@@ -14,7 +14,7 @@ namespace Evaluator
         {
             if (args.Count() != 3)
             {
-                Console.WriteLine("Incorrect number of parameters (should be 3)");
+                Console.WriteLine("Incorrect number of parameters - should be 3");
             }
             else
             {
