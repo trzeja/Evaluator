@@ -20,11 +20,11 @@ namespace Evaluator
 
         private int SubRegionsNumber { get; set; }
 
-        public double CalculatePSNR(string path1, string path2)
+        public double CalculatePSNR(string image1Path, string image2Path)
         {
-            ReadFile(path1);
+            ReadFile(image1Path);
             var greyValues1 = GreyValues;
-            ReadFile(path2);
+            ReadFile(image2Path);
             var greyValues2 = GreyValues;
 
             double sum = 0;
@@ -39,13 +39,13 @@ namespace Evaluator
             return 10 * Math.Log10((Math.Pow(Params.SignalMax, 2)) / MSE);
         }
 
-        public double CalculateSimilarityBySegmentation(string path1, string path2)
+        public double CalculateSimilarityBySegmentation(string image1Path, string image2Path)
         {
             int imageID = -1;
 
-            var frontierPixelsIndexes1 = SegmentImage(path1, ++imageID);
+            var frontierPixelsIndexes1 = SegmentImage(image1Path, ++imageID);
 
-            var frontierPixelsIndexes2 = SegmentImage(path2, ++imageID);
+            var frontierPixelsIndexes2 = SegmentImage(image2Path, ++imageID);
 
             return CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
         }

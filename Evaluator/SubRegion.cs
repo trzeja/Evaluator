@@ -75,7 +75,7 @@ namespace Evaluator
             CalculateNormalizedHistogram();         
         }
 
-        public void CalculateNormalizedHistogram()
+        private void CalculateNormalizedHistogram()
         {
             Histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
 
