@@ -21,12 +21,20 @@ namespace Evaluator
 
         static Params()
         {
-            XDocument xdoc = XDocument.Load("Params.xml");
-            Bins = int.Parse(xdoc.Descendants("Bins").First().Value);
-            SMin = int.Parse(xdoc.Descendants("SMin").First().Value);
-            RegionsToRemain = int.Parse(xdoc.Descendants("RegionsToRemain").First().Value);
-            Y = double.Parse(xdoc.Descendants("Y").First().Value);
-            BinSize = NumOfPossibleCValues / Bins;
+            try
+            {
+                XDocument xdoc = XDocument.Load("Params.xml");
+                Bins = int.Parse(xdoc.Descendants("Bins").First().Value);
+                SMin = int.Parse(xdoc.Descendants("SMin").First().Value);
+                RegionsToRemain = int.Parse(xdoc.Descendants("RegionsToRemain").First().Value);
+                Y = double.Parse(xdoc.Descendants("Y").First().Value);
+                BinSize = NumOfPossibleCValues / Bins;
+            }
+            catch (Exception)
+            {
+
+                Console.WriteLine("A problem with parmeters xml file occured - further processing is not possible");
+            }            
         }
 
         public const int Neighbors = 8;
