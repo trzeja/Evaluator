@@ -209,7 +209,7 @@ namespace Evaluator
                     .Where(s => s.Blocks.FirstOrDefault().IntersectsWith(enlargedBlock) && !s.Equals(region))
                     .ToList();
 
-                region.UpdateNeighbours(regionNeighbors);
+                region.UpdateNeighbors(regionNeighbors);
             }
         }
 
@@ -317,7 +317,7 @@ namespace Evaluator
 
             for (int i = 0; i < SubRegions.Count; i++)
             {
-                var neighborsIDs = SubRegions[i].GetNeighboursIDs();
+                var neighborsIDs = SubRegions[i].GetNeighborsIDs();
                 foreach (var neighborID in neighborsIDs)
                 {
                     if (neighborID < i)

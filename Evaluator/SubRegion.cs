@@ -40,7 +40,7 @@ namespace Evaluator
             GreyValues = greyValues;
         }
         
-        public List<int> GetNeighboursIDs()
+        public List<int> GetNeighborsIDs()
         {
             return new List<int>(Neighbors.Select(n => n.ID));
         }
@@ -58,7 +58,7 @@ namespace Evaluator
             Neighbors.Remove(Neighbors.Find(n => n.ID == neighborID));
         }
 
-        public void UpdateNeighbours(List<SubRegion> newNeighbors)
+        public void UpdateNeighbors(List<SubRegion> newNeighbors)
         {
             Neighbors = newNeighbors;
         }
@@ -157,7 +157,7 @@ namespace Evaluator
             int smallerNeighborsSum = 0;
             int smallerNeighborsCount = 0;
 
-            var NeighboursIndexes = new List<int>
+            var NeighborsIndexes = new List<int>
             {
                 pixelIdx - width - 1,
                 pixelIdx - width,
@@ -171,16 +171,16 @@ namespace Evaluator
 
             for (int i = 0; i < 8; i++)
             {
-                if (greyValues[pixelIdx] <= greyValues[NeighboursIndexes[i]])
+                if (greyValues[pixelIdx] <= greyValues[NeighborsIndexes[i]])
                 {
                     LBP += (byte)Math.Pow(2, i);
 
-                    biggerOrEqualNeighborsSum += greyValues[NeighboursIndexes[i]];
+                    biggerOrEqualNeighborsSum += greyValues[NeighborsIndexes[i]];
                     biggerOrEqualNeighborsCount++;
                 }
                 else
                 {
-                    smallerNeighborsSum += greyValues[NeighboursIndexes[i]];
+                    smallerNeighborsSum += greyValues[NeighborsIndexes[i]];
                 }
             }
 
