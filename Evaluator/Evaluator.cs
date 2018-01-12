@@ -399,27 +399,26 @@ namespace Evaluator
             File.WriteAllText(path1, sb.ToString().Replace('.', ','));
         }
 
-        private double CalculateFrontiersSimilarity(List<int> indexes1, List<int> indexes2)
+        private double CalculateFrontiersSimilarity(List<int> frontierPixelsIndexes1, List<int> frontierPixelsIndexes2)
         {
             int matchedIndexes = 0;
 
-            if (indexes2.Count() > indexes1.Count())
+            if (frontierPixelsIndexes2.Count() > frontierPixelsIndexes1.Count())
             {
-                var temp = indexes1;
-                indexes1 = indexes2;
-                indexes2 = temp;
+                var temp = frontierPixelsIndexes1;
+                frontierPixelsIndexes1 = frontierPixelsIndexes2;
+                frontierPixelsIndexes2 = temp;
             }
 
-            foreach (var idx in indexes1)
+            foreach (var idx in frontierPixelsIndexes1)
             {
-                if (indexes2.Contains(idx))
+                if (frontierPixelsIndexes2.Contains(idx))
                 {
                     matchedIndexes++;
                 }
             }
 
-            return matchedIndexes / (double)indexes1.Count() * 100;
-
+            return matchedIndexes / (double)frontierPixelsIndexes1.Count() * 100;
         }
 
         private List<int> GetFrontierPixelsIndexes()
