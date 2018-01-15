@@ -39,7 +39,8 @@ namespace Evaluator
 
         static void SaveResults(double PSNR, double similarity, string path)
         {
-            File.AppendAllText(path,PSNR.ToString("F2") +  " " + similarity.ToString("F2") + Environment.NewLine);
+            File.AppendAllText(path,PSNR.ToString("F2").Replace('.', ',') +  " "
+                + similarity.ToString("F2").Replace('.', ',') + Environment.NewLine);
         }
     }
 }
