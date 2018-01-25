@@ -14,7 +14,6 @@ namespace Evaluator
         public int ID { get; private set; }
         public List<int> PixelsIndexes { get; private set; }
 
-
         public List<Rectangle> Blocks { get; private set; }
         public List<SubRegion> Neighbors { get; private set; }
 
@@ -100,15 +99,9 @@ namespace Evaluator
             var blockPixels = Params.SMin * Params.SMin;
             PixelsIndexes = new List<int>();
 
-            //for (int i = 0; i < PixelsIndexes.Count(); i += blockPixels)
-            //{
-            //    SaveBlockPixelsIndexesInArray(block, BmpWidth, PixelsIndexes, i);
-            //}
-
-            //int i = 0;
             foreach (var block in Blocks)
             {
-                SaveBlockPixelsIndexesInArray(block, BmpWidth);
+                SaveBlockPixelsIndexes(block, BmpWidth);
             }
         }
 
@@ -159,9 +152,8 @@ namespace Evaluator
             }
         }
 
-        private void SaveBlockPixelsIndexesInArray(Rectangle block, int bmpWidth)
+        private void SaveBlockPixelsIndexes(Rectangle block, int bmpWidth)
         {           
-
             for (int i = block.Y; i < block.Y + block.Height; i++)
             {
                 for (int j = block.X; j < block.X + block.Width; j++)

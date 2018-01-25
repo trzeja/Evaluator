@@ -13,9 +13,7 @@ namespace Evaluator
         private byte[] GreyValues { get; set; }
 
         private int[] ID { get; set; } // TO DEL
-
-        //private int[] IDs { get; set; }
-
+        
         private Bitmap Bmp { get; set; }
 
         private List<SubRegion> SubRegions { get; set; }
@@ -112,9 +110,7 @@ namespace Evaluator
 
             SaveIDsInArray();
             SaveRegonsPixelsIndexes();
-            DrawBoundariesInFile(path, imageID); // TO DEL
-
-            //return GetFrontierPixelsIndexes();
+            //DrawBoundariesInFile(path, imageID); // TO DEL            
         }
 
         private void ReadFile(string path)
@@ -463,79 +459,7 @@ namespace Evaluator
             }
 
             File.WriteAllText(path1, sb.ToString().Replace('.', ','));
-        }
-
-        private double CalculateFrontiersSimilarity(List<int> frontierPixelsIndexes1, List<int> frontierPixelsIndexes2)
-        {
-            int matchedIndexes = 0;
-
-            if (frontierPixelsIndexes2.Count() > frontierPixelsIndexes1.Count())
-            {
-                var temp = frontierPixelsIndexes1;
-                frontierPixelsIndexes1 = frontierPixelsIndexes2;
-                frontierPixelsIndexes2 = temp;
-            }
-
-            foreach (var idx in frontierPixelsIndexes1)
-            {
-                if (frontierPixelsIndexes2.Contains(idx))
-                {
-                    matchedIndexes++;
-                }
-            }
-
-            return matchedIndexes / (double)frontierPixelsIndexes1.Count() * 100;
-        }
-
-        private List<int> GetFrontierPixelsIndexes()
-        {
-            var frontierPixelsIndexes = new List<int>();
-
-            Rectangle mainBlock = new Rectangle(3, 3, Bmp.Width - 3, Bmp.Height - 3); // omit picture frame border
-
-            for (int i = mainBlock.Y; i < mainBlock.Height; i++)
-            {
-                for (int j = mainBlock.X; j < mainBlock.Width; j++)
-                {
-                    int pixelIndex = Bmp.Width * i + j;
-                    if (IsOnFrontier(pixelIndex))
-                    {
-                        frontierPixelsIndexes.Add(pixelIndex);
-                    }
-                }
-            }
-
-            return frontierPixelsIndexes;
-        }
-
-        private bool IsOnFrontier(int pixelIndex)
-        {
-            #region NeighborsIndexes
-
-            var neighborsIndexes = new List<int>
-            {
-                pixelIndex - Bmp.Width - 1,
-                pixelIndex - Bmp.Width,
-                pixelIndex - Bmp.Width + 1,
-                pixelIndex + 1,
-                pixelIndex - 1,
-                pixelIndex + Bmp.Width - 1,
-                pixelIndex + Bmp.Width,
-                pixelIndex + Bmp.Width + 1
-            };
-
-            #endregion
-
-            foreach (var neighborIdx in neighborsIndexes)
-            {
-                if (ID[pixelIndex] != ID[neighborIdx])
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        }       
 
         private int GetCoveredPixels(SubRegion subRegion1, SubRegion subRegion2)
         {
