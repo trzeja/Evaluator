@@ -12,7 +12,9 @@ namespace Evaluator
     {
         private byte[] GreyValues { get; set; }
 
-        private int[] ID { get; set; }
+        private int[] ID { get; set; } // TO DEL
+
+        //private int[] IDs { get; set; }
 
         private Bitmap Bmp { get; set; }
 
@@ -43,14 +45,64 @@ namespace Evaluator
         {
             int imageID = -1;
 
-            var frontierPixelsIndexes1 = SegmentImage(image1Path, ++imageID);
+            SegmentImage(image1Path, ++imageID);
 
-            var frontierPixelsIndexes2 = SegmentImage(image2Path, ++imageID);
+            List<SubRegion> subRegions1 =  SubRegions.Where(s => s != null).OrderByDescending(s => s.Pixels).ToList(); 
 
-            return CalculateFrontiersSimilarity(frontierPixelsIndexes1, frontierPixelsIndexes2);
+            SegmentImage(image2Path, ++imageID);
+
+            List<SubRegion> subRegions2 = SubRegions.Where(s => s != null).ToList();
+
+
+            var totalWeight = 0;
+            double[] weightedCoverages = new double[subRegions1.Count];
+
+            for (int i = 0; i < subRegions1.Count; i++)
+            {
+                int maxCoverageRegion2Index = 0;
+                int maxCoveragePixelsCovered = 0;
+                double maxCoverage = 0;
+
+                if (subRegions2.Count == 0)
+                {
+                    break; 
+                }
+
+                for (int j = 0; j < subRegions2.Count; j++)
+                {       
+                    var coveredPixels = GetCoveredPixels(subRegions1[i], subRegions2[j]);
+                    var coverage = (double)coveredPixels / (subRegions1[i].Pixels + subRegions2[j].Pixels - coveredPixels);
+
+                    if (coverage > maxCoverage)
+                    {
+                        maxCoverage = coverage;
+                        maxCoverageRegion2Index = j;
+                        maxCoveragePixelsCovered = coveredPixels;
+                    }
+                }
+
+                var coverageWeight = subRegions1[i].Pixels + subRegions2[maxCoverageRegion2Index].Pixels - maxCoveragePixelsCovered;
+                totalWeight += coverageWeight;
+                var weightedCoverage = maxCoverage * coverageWeight;
+                weightedCoverages[i] = weightedCoverage;
+
+                subRegions2.RemoveAt(maxCoverageRegion2Index);
+
+            }
+
+            double sum = 0;
+
+            foreach (var weightedCoverage in weightedCoverages)
+            {
+                sum += weightedCoverage;
+            }
+
+            var similarity = sum / totalWeight * 100;
+
+            return similarity;
         }
 
-        private List<int> SegmentImage(string path, int imageID)
+        private void SegmentImage(string path, int imageID)
         {
             ReadFile(path);
 
@@ -59,9 +111,10 @@ namespace Evaluator
             Merge(imageID);
 
             SaveIDsInArray();
-            //DrawBoundariesInFile(path, imageID); // TO DEL
+            SaveRegonsPixelsIndexes();
+            DrawBoundariesInFile(path, imageID); // TO DEL
 
-            return GetFrontierPixelsIndexes();
+            //return GetFrontierPixelsIndexes();
         }
 
         private void ReadFile(string path)
@@ -386,6 +439,19 @@ namespace Evaluator
             }
         }
 
+        private void SaveRegonsPixelsIndexes()
+        {
+            foreach (var region in SubRegions)
+            {
+                if (region == null)
+                {
+                    continue;
+                }
+
+                region.SavePixelsIndexesInArray();
+            }
+        }
+
         private void SaveMIRsInFile(List<string> MIRs) // TO DEL
         {
             string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\MIRs.txt";
@@ -469,6 +535,11 @@ namespace Evaluator
             }
 
             return false;
+        }
+
+        private int GetCoveredPixels(SubRegion subRegion1, SubRegion subRegion2)
+        {
+            return subRegion1.PixelsIndexes.Intersect(subRegion2.PixelsIndexes).Count();           
         }
     }
 }
