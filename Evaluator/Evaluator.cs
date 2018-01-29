@@ -109,7 +109,7 @@ namespace Evaluator
             Merge(imageID);
 
             SaveIDsInArray();
-            SaveRegonsPixelsIndexes();
+            SaveRegionsPixelsIndexes();
             //DrawBoundariesInFile(path, imageID); // TO DEL            
         }
 
@@ -435,7 +435,7 @@ namespace Evaluator
             }
         }
 
-        private void SaveRegonsPixelsIndexes()
+        private void SaveRegionsPixelsIndexes()
         {
             foreach (var region in SubRegions)
             {

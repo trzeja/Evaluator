@@ -75,24 +75,7 @@ namespace Evaluator
             }
             
             CalculateNormalizedHistogram();         
-        }
-
-        private void CalculateNormalizedHistogram()
-        {
-            Histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
-
-            foreach (var block in Blocks)
-            {
-                var blockHistogram = GetHistogramFrom(block);
-
-                for (int i = 0; i < Histogram.Length; i++)
-                {
-                    Histogram[i] += blockHistogram[i];
-                }
-            }
-
-            NormalizeHistogram();
-        }
+        }        
 
         public void SavePixelsIndexesInArray() 
         {
@@ -102,6 +85,14 @@ namespace Evaluator
             foreach (var block in Blocks)
             {
                 SaveBlockPixelsIndexes(block, BmpWidth);
+            }
+        }
+
+        public void SaveIDsInArray(int[] IDs)
+        {
+            foreach (var block in Blocks)
+            {
+                SaveBlockIDInArray(block, IDs, BmpWidth);
             }
         }
 
@@ -131,12 +122,21 @@ namespace Evaluator
             }
         }
 
-        public void SaveIDsInArray(int[] IDs)
+        private void CalculateNormalizedHistogram()
         {
+            Histogram = new double[(Params.MaxLBP + 1) * Params.Bins];
+
             foreach (var block in Blocks)
             {
-                SaveBlockIDInArray(block, IDs, BmpWidth);
+                var blockHistogram = GetHistogramFrom(block);
+
+                for (int i = 0; i < Histogram.Length; i++)
+                {
+                    Histogram[i] += blockHistogram[i];
+                }
             }
+
+            NormalizeHistogram();
         }
 
         private void SaveBlockIDInArray(Rectangle block, int[] IDs, int bmpWidth)
