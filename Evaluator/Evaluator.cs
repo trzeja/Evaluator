@@ -39,15 +39,13 @@ namespace Evaluator
             return 10 * Math.Log10((Math.Pow(Params.SignalMax, 2)) / MSE);
         }
 
-        public double CalculateSimilarityBySegmentation(string image1Path, string image2Path)
+        public double CalculateSimilarityBySegmentation(string image1Path, string image2Path, int imageID)
         {
-            int imageID = -1;
-
-            SegmentImage(image1Path, ++imageID);
+            SegmentImage(image1Path, 0);
 
             List<SubRegion> subRegions1 =  SubRegions.Where(s => s != null).OrderByDescending(s => s.Pixels).ToList(); 
 
-            SegmentImage(image2Path, ++imageID);
+            SegmentImage(image2Path, imageID);
 
             List<SubRegion> subRegions2 = SubRegions.Where(s => s != null).ToList();
 
@@ -110,7 +108,11 @@ namespace Evaluator
 
             SaveIDsInArray();
             SaveRegonsPixelsIndexes();
-            //DrawBoundariesInFile(path, imageID); // TO DEL            
+
+            if (imageID != 0)
+            {
+                DrawBoundariesInFile(path, imageID); // TO DEL  
+            }                    
         }
 
         private void ReadFile(string path)
@@ -175,7 +177,7 @@ namespace Evaluator
 
             Bmp.UnlockBits(bmpData);
 
-            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\frontiersDrawed" + imageID.ToString() + ".gif";
+            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\frontiersDrawed\" + imageID.ToString() + ".gif";
 
             Bmp.Save(output);
 
