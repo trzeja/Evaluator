@@ -26,10 +26,24 @@ namespace Evaluator
                 if (File.Exists(image1FilePath) && File.Exists(image2FilePath))
                 {
                     var evaluator = new Evaluator();
+
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+
                     var PSNR = evaluator.CalculatePSNR(image1FilePath, image2FilePath);
+
+                    watch.Stop();
+                    var psnrTime = watch.ElapsedMilliseconds;
+
+
+
+                     watch = System.Diagnostics.Stopwatch.StartNew();
+
                     var similarity = evaluator.CalculateSimilarityBySegmentation(image1FilePath, image2FilePath, int.Parse(imageID));
 
-                    SaveResults(PSNR, similarity, resultsFilePath);
+                    watch.Stop();
+                    var sTime = watch.ElapsedMilliseconds;                   
+
+                    SaveResults(PSNR, similarity, psnrTime, sTime, resultsFilePath);
                 }
                 else
                 {
@@ -38,10 +52,12 @@ namespace Evaluator
             }                  
         }
 
-        static void SaveResults(double PSNR, double similarity, string path)
+        static void SaveResults(double PSNR, double similarity, double psnrTime, double sTime, string path)
         {
             File.AppendAllText(path,PSNR.ToString("F2").Replace('.', ',') +  " "
-                + similarity.ToString("F2").Replace('.', ',') + Environment.NewLine);
+                + similarity.ToString("F2").Replace('.', ',') + " "
+                + psnrTime.ToString().Replace('.', ',') + " "
+                + sTime.ToString().Replace('.', ',') + Environment.NewLine);
         }
     }
 }

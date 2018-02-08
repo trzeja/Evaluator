@@ -103,6 +103,8 @@ namespace Evaluator
             ReadFile(path);
 
             CreateSubRegions();
+            SaveIDsInArray();
+            //DrawBoundariesInFile(path, imageID); // TO DEL  
 
             Merge(imageID);
 
@@ -111,7 +113,7 @@ namespace Evaluator
 
             if (imageID != 0)
             {
-                DrawBoundariesInFile(path, imageID); // TO DEL  
+                //DrawBoundariesInFile(path, imageID); // TO DEL  
             }                    
         }
 
