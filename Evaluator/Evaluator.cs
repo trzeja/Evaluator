@@ -12,7 +12,7 @@ namespace Evaluator
     {
         private byte[] GreyValues { get; set; }
 
-        private int[] ID { get; set; } // TO DEL
+        private int[] ID { get; set; } 
         
         private Bitmap Bmp { get; set; }
 
@@ -109,8 +109,7 @@ namespace Evaluator
             Merge(imageID);
 
             SaveIDsInArray();
-            SaveRegionsPixelsIndexes();
-            //DrawBoundariesInFile(path, imageID); // TO DEL            
+            SaveRegionsPixelsIndexes();      
         }
 
         private void ReadFile(string path)
@@ -138,77 +137,8 @@ namespace Evaluator
             SubRegion.Init(GreyValues, Bmp.Width);
 
             Bmp.UnlockBits(bmpData);
-        }
-
-        private void DrawBoundariesInFile(string path, int imageID) //TO DEL
-        {
-            Bmp = new Bitmap(path);
-
-            int pixelsToTrim = Bmp.Width % 4;
-            if (pixelsToTrim != 0)
-            {
-                Bmp = Bmp.Clone(new Rectangle(0, 0, Bmp.Width - pixelsToTrim, Bmp.Height), Bmp.PixelFormat);
-            }
-
-            Rectangle rect = new Rectangle(0, 0, Bmp.Width, Bmp.Height);
-            BitmapData bmpData = Bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                Bmp.PixelFormat);
-
-            IntPtr ptr = bmpData.Scan0;
-
-            var bytes = Bmp.Width * Bmp.Height;
-            GreyValues = new byte[bytes];
-
-            System.Runtime.InteropServices.Marshal.Copy(ptr, GreyValues, 0, bytes);
-
-            Rectangle mainBlock = new Rectangle(1, 1, Bmp.Width - 1, Bmp.Height - 1);
-
-            for (int i = mainBlock.Y; i < mainBlock.Height; i++)
-            {
-                for (int j = mainBlock.X; j < mainBlock.Width; j++)
-                {
-                    ChangePixelColorIfFrontier(Bmp.Width * i + j); //spr czy bmp.width dobre
-                }
-            }
-
-            System.Runtime.InteropServices.Marshal.Copy(GreyValues, 0, ptr, bytes);
-
-            Bmp.UnlockBits(bmpData);
-
-            string output = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\frontiersDrawed" + imageID.ToString() + ".gif";
-
-            Bmp.Save(output);
-
-            System.Diagnostics.Process.Start(output);
-        }
-
-        private void ChangePixelColorIfFrontier(int pixelIdx) //TO DEL
-        {
-            #region NeighborsIndexes
-
-            var neighborsIndexes = new List<int>
-            {
-                pixelIdx - Bmp.Width - 1,
-                pixelIdx - Bmp.Width,
-                pixelIdx - Bmp.Width + 1,
-                pixelIdx + 1,
-                pixelIdx - 1,
-                pixelIdx + Bmp.Width - 1,
-                pixelIdx + Bmp.Width,
-                pixelIdx + Bmp.Width + 1
-            };
-
-            #endregion
-
-            foreach (var neighborIdx in neighborsIndexes)
-            {
-                if (ID[pixelIdx] != ID[neighborIdx])
-                {
-                    GreyValues[pixelIdx] = 0;
-                }
-            }
-        }
-
+        }             
+       
         private void CreateSubRegions()
         {
             SubRegions = new List<SubRegion>();
@@ -264,8 +194,6 @@ namespace Evaluator
 
         private void Merge(int imageID)
         {
-            var MIRs = new List<string>(); // TO DEL
-
             double MImax = double.MinValue;
             double MIcur;
             double MIR = double.MinValue;
@@ -312,11 +240,7 @@ namespace Evaluator
                 CalculateMIsFor(newMergePairs);
 
                 mergers.AddRange(newMergePairs);
-
-                MIRs.Add(MIR.ToString()); //TO DEL 
             }
-
-            SaveMIRsInFile(MIRs); //TO DEL
         }
 
         private List<Merge> MergePair(Merge pair)
@@ -447,19 +371,6 @@ namespace Evaluator
                 region.SavePixelsIndexesInArray();
             }
         }
-
-        private void SaveMIRsInFile(List<string> MIRs) // TO DEL
-        {
-            string path1 = @"C:\Users\trzej_000\Google Drive\Politechniczne\INZ\map\MIRs.txt";
-
-            var sb = new StringBuilder();
-            foreach (var MIR in MIRs)
-            {
-                sb.Append(MIR + Environment.NewLine);
-            }
-
-            File.WriteAllText(path1, sb.ToString().Replace('.', ','));
-        }       
 
         private int GetCoveredPixels(SubRegion subRegion1, SubRegion subRegion2)
         {

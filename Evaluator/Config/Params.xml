@@ -3,5 +3,5 @@
   <Bins>16</Bins> 
   <SMin>16</SMin>
   <Y>0.04</Y>
-  <RegionsToRemain>12</RegionsToRemain>
+  <RegionsToRemain>10</RegionsToRemain>
 </Params>
